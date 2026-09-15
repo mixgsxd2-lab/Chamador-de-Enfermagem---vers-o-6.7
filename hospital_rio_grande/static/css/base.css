@@ -1,0 +1,608 @@
+/* ==========================================================================
+   Hospital Rio Grande — design system compartilhado por Enfermagem e
+   Hotelaria (`@import`ado por static/css/enfermagem.css e
+   static/css/hotelaria.css). Antes, os dois arquivos mantinham cópias quase
+   idênticas de botões, cabeçalho admin, cartões de dashboard, filtros e
+   modal — qualquer ajuste de identidade visual precisava ser feito duas
+   vezes, e as duas cópias já tinham começado a divergir em detalhes. Este
+   arquivo é a fonte única dessas peças; cada CSS de módulo mantém só o que
+   é realmente específico dele (fluxo do paciente, chat, kanban).
+   ========================================================================== */
+
+:root {
+  /* ---- Cor de marca (idêntica à paleta já validada do projeto) ---- */
+  --primaria: #5c8fc4;
+  --primaria-escura: #4a76a3;
+  --primaria-clara: #eaf2fb;
+  --primaria-suave: #d6e7f7;
+
+  --fundo: #f6f8fb;
+  --branco: #ffffff;
+  --texto: #1f2937;
+  --texto-suave: #6b7280;
+  --borda: #e5e9f0;
+
+  --sombra: 0 4px 14px rgba(31, 58, 94, 0.08);
+  --sombra-media: 0 10px 26px rgba(31, 58, 94, 0.14);
+  --sombra-forte: 0 10px 26px rgba(31, 58, 94, 0.14);
+  --raio: 18px;
+  --raio-pequeno: 12px;
+
+  /* Faixas de prioridade/status (Enfermagem) — só com cores que já existem
+     na família da paleta da Hotelaria, para os dois módulos permanecerem
+     visualmente unificados. "Média" propositalmente cinza-neutro (não
+     azul), para não se confundir com a cor de marca/ação usada em botões e
+     no status "em atendimento". Tons escurecidos em relação à primeira
+     versão do design (que usava os tons médios direto da Hotelaria) para
+     atingir contraste AA (≥4.5:1) como texto sobre o fundo pastel do
+     próprio selo — a versão anterior ficava por volta de 3:1.
+     */
+  --critica: #b3261e;
+  --critica-fundo: #fdeceb;
+  --alta: #96660c;
+  --alta-fundo: #fdf1dc;
+  --media: #52606d;
+  --media-fundo: #eef1f6;
+  --baixa: #1f7a53;
+  --baixa-fundo: #e3f7ee;
+  --hotelaria: #7c3aed;
+  --hotelaria-fundo: #f1e9fe;
+
+  --sucesso: #1f7a53;
+  --atencao: #96660c;
+  --perigo: #b3261e;
+  --info: #3f7dc9;
+
+  /* ---- Espaçamento (escala 4px) — usado nas peças novas/refeitas ---- */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-5: 20px;
+  --esp-6: 24px;
+  --esp-7: 32px;
+
+  --fonte: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Alvo de toque mínimo recomendado (mobile/acessibilidade). */
+  --alvo-toque-min: 44px;
+}
+
+/* ==========================================================================
+   Reset e base
+   ========================================================================== */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  overflow-x: hidden;
+  font-family: var(--fonte);
+  background: var(--fundo);
+  color: var(--texto);
+  -webkit-font-smoothing: antialiased;
+}
+a { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+input, textarea, select { font-family: inherit; }
+h1, h2, h3 { margin: 0; }
+p { margin: 0; }
+img, svg { max-width: 100%; }
+
+/* Vários componentes abaixo (banner-status, painel-atencao, etc.) definem
+   `display: flex`/`grid` na própria classe. Sem esta regra, esse `display`
+   declarado pelo autor empataria em especificidade com o `[hidden]` da
+   folha de estilos do navegador e, por vir depois na cascata, VENCERIA —
+   fazendo `hidden` (e `el.hidden = true` via JS) parar de esconder o
+   elemento. `!important` aqui garante que `hidden` sempre vence, como o
+   usuário espera. */
+[hidden] { display: none !important; }
+
+@keyframes surgir-anim { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.surgir { animation: surgir-anim .28s ease both; }
+
+.texto-suave { color: var(--texto-suave); }
+.texto-centro { text-align: center; }
+.texto-carregando { text-align: center; padding: 60px 20px; color: var(--texto-suave); }
+
+/* Some visualmente mas continua acessível a leitor de tela. */
+.apenas-leitor {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* Estado de foco visível e consistente em toda a interface — antes só os
+   `<input>` tinham destaque de foco; botões, links e chips não tinham
+   nenhum indicador para navegação por teclado. */
+:focus-visible {
+  outline: 2.5px solid var(--primaria);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Placeholder de carregamento (usado no lugar de "Carregando..." simples em
+   listas/cartões que ainda não vieram do servidor). */
+.esqueleto {
+  position: relative; overflow: hidden; background: var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+.esqueleto::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: esqueleto-brilho 1.4s ease-in-out infinite;
+}
+@keyframes esqueleto-brilho { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* ==========================================================================
+   Botões
+   ========================================================================== */
+.botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--alvo-toque-min);
+  padding: 13px 22px; border-radius: 12px; border: none;
+  font-weight: 700; font-size: 0.95rem;
+  background: var(--primaria); color: #fff;
+  box-shadow: var(--sombra);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease;
+}
+.botao:hover { transform: translateY(-2px); box-shadow: var(--sombra-media); }
+.botao:active { transform: translateY(0); }
+.botao:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+.botao-bloco, .botao.largo { width: 100%; }
+.botao-fantasma, .botao.secundario {
+  background: var(--branco); color: var(--primaria); border: 1.5px solid var(--primaria-suave); box-shadow: none;
+}
+.botao-fantasma:hover, .botao.secundario:hover { background: var(--primaria-clara); }
+.botao-sucesso, .botao.sucesso { background: var(--sucesso); }
+.botao-primario { background: var(--primaria); }
+.botao.perigo { background: var(--perigo); }
+.botao.pequeno { min-height: 38px; padding: 8px 14px; font-size: 0.82rem; border-radius: 10px; }
+
+/* Botão só-ícone (voltar, fechar modal) — alvo de toque garantido mesmo
+   quando o ícone em si é pequeno. */
+.botao-icone {
+  width: var(--alvo-toque-min); height: var(--alvo-toque-min);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 12px; background: var(--fundo); color: var(--texto);
+}
+
+/* ==========================================================================
+   Campo de formulário genérico (usado no fluxo do paciente dos dois
+   módulos — seletor de Andar/Leito, textarea de descrição, etc.)
+   ========================================================================== */
+.campo { margin-bottom: 16px; }
+.campo:last-child { margin-bottom: 0; }
+.campo label { display: block; font-size: 0.82rem; font-weight: 700; color: var(--texto-suave); margin-bottom: 6px; }
+.campo select, .campo input[type="text"], .campo textarea {
+  width: 100%; min-height: var(--alvo-toque-min); padding: 13px 14px; border-radius: 12px; border: 1.5px solid var(--borda);
+  font-size: 1rem; background: var(--branco); color: var(--texto);
+}
+.campo select:focus, .campo input:focus, .campo textarea:focus { outline: none; border-color: var(--primaria); }
+.campo textarea { resize: vertical; min-height: 78px; }
+
+/* ==========================================================================
+   Banner de status/aviso (usado no acompanhamento do paciente dos dois
+   módulos — cada um define suas próprias variantes de cor específicas do
+   seu fluxo em cima deste bloco genérico; "sem conexão" é comum aos dois).
+   ========================================================================== */
+.banner-status {
+  display: flex; align-items: flex-start; gap: 12px;
+  border-radius: var(--raio); padding: 16px 18px; margin-bottom: 14px;
+  box-shadow: var(--sombra);
+}
+.banner-status-icone { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+.banner-status strong { display: block; font-size: 1.02rem; margin-bottom: 2px; }
+.banner-status p { font-size: 0.86rem; color: inherit; opacity: 0.9; line-height: 1.4; margin: 0; }
+.banner-status-sem_conexao { background: #eef1f6; color: var(--texto-suave); }
+
+/* ==========================================================================
+   Toast (substitui alert()) — ver static/js/common.js
+   ========================================================================== */
+.hrg-toast-container {
+  position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 999; display: flex; flex-direction: column; gap: 8px;
+  width: min(92vw, 420px); pointer-events: none;
+}
+.hrg-toast {
+  background: #1f2937; color: #fff; padding: 12px 16px; border-radius: 12px;
+  font-size: 0.88rem; font-weight: 600; box-shadow: var(--sombra-forte);
+  opacity: 0; transform: translateY(10px); transition: opacity .22s ease, transform .22s ease;
+  text-align: center;
+}
+.hrg-toast-visivel { opacity: 1; transform: translateY(0); }
+.hrg-toast-erro { background: var(--critica); }
+.hrg-toast-sucesso { background: var(--sucesso); }
+.hrg-toast-info { background: #1f2937; }
+
+/* ==========================================================================
+   Selos de prioridade e status (compartilhados)
+   ========================================================================== */
+.selo-prioridade {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 0.02em;
+}
+.selo-critica { background: var(--critica-fundo); color: var(--critica); }
+.selo-alta { background: var(--alta-fundo); color: var(--alta); }
+.selo-media { background: var(--media-fundo); color: var(--media); }
+.selo-baixa { background: var(--baixa-fundo); color: var(--baixa); }
+
+.selo-status {
+  display: inline-flex; align-items: center; font-size: 0.72rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px; background: #eef1f6; color: var(--texto-suave);
+}
+.selo-status-pendente { background: #fdf0e4; color: var(--atencao); }
+.selo-status-em_atendimento, .selo-status-em_andamento { background: var(--primaria-clara); color: var(--primaria); }
+.selo-status-finalizado { background: var(--baixa-fundo); color: var(--baixa); }
+
+.borda-critica { border-left: 5px solid var(--critica); }
+.borda-alta { border-left: 5px solid var(--alta); }
+.borda-media { border-left: 5px solid var(--media); }
+.borda-baixa { border-left: 5px solid var(--baixa); }
+
+/* Indicador de "acima do tempo esperado" (SLA da faixa de prioridade). */
+.selo-atrasado {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.7rem; font-weight: 800; padding: 3px 9px; border-radius: 20px;
+  background: var(--critica-fundo); color: var(--critica);
+}
+
+/* Badge de tendência (comparativo com o período anterior). */
+.tendencia { font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
+.tendencia-alta { color: var(--critica); }
+.tendencia-baixa { color: var(--sucesso); }
+.tendencia-neutra { color: var(--texto-suave); }
+
+/* ==========================================================================
+   Login (compartilhado)
+   ========================================================================== */
+.tela-login {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 30% 30%, var(--primaria-clara), var(--fundo));
+  padding: 20px;
+}
+.cartao-login {
+  background: var(--branco);
+  padding: 40px 34px;
+  border-radius: 22px;
+  box-shadow: var(--sombra-forte);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+.cartao-login .marca-login {
+  display: block; font-weight: 800; font-size: 1.05rem; color: var(--primaria); margin-bottom: 16px;
+}
+.cartao-login .selo-login {
+  width: 60px; height: 60px; object-fit: contain; display: block; margin: 0 auto 16px;
+}
+.cartao-login h2 { margin: 0 0 4px; }
+.cartao-login p.legenda { color: var(--texto-suave); font-size: 0.88rem; margin: 0 0 26px; }
+.campo-form { text-align: left; margin-bottom: 14px; }
+.campo-form label { font-size: 0.82rem; font-weight: 700; color: var(--texto-suave); display: block; margin-bottom: 6px; }
+.campo-form input {
+  width: 100%; min-height: var(--alvo-toque-min); padding: 12px 14px;
+  border-radius: 10px; border: 1.5px solid var(--borda); font-size: 0.95rem;
+}
+.campo-form input:focus { outline: none; border-color: var(--primaria); }
+.dica-login { margin-top: 18px; font-size: 0.76rem; color: var(--texto-suave); background: var(--fundo); padding: 10px; border-radius: 10px; }
+.erro-login { background: var(--critica-fundo); color: var(--critica); padding: 10px 14px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 14px; font-weight: 600; }
+.link-voltar-login { display: inline-block; margin-top: 16px; font-size: 0.82rem; color: var(--texto-suave); font-weight: 600; }
+
+/* ==========================================================================
+   Portal inicial (compartilhado)
+   ========================================================================== */
+.fundo-portal { background: radial-gradient(circle at 20% 20%, var(--primaria-clara), var(--fundo) 55%); min-height: 100vh; }
+.portal { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+.portal-caixa { max-width: 920px; width: 100%; text-align: center; }
+.portal-logo { height: 52px; width: auto; margin: 0 auto 18px; display: block; }
+.portal-titulo { font-size: 1.3rem; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; color: var(--primaria); margin: 0 0 10px; }
+.portal-legenda { color: var(--texto-suave); font-size: 1.05rem; margin: 0 0 36px; }
+.portal-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%; max-width: 900px; margin: 0 auto; text-align: left; }
+.portal-cartao {
+  background: var(--branco); border-radius: var(--raio); padding: 28px;
+  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: var(--sombra); border: 1px solid var(--borda);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.portal-cartao:hover, .portal-cartao:focus-visible { transform: translateY(-4px); box-shadow: var(--sombra-forte); }
+.portal-cartao-icone {
+  width: 50px; height: 50px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--primaria-clara); color: var(--primaria);
+}
+.portal-cartao-icone svg { width: 24px; height: 24px; }
+.portal-cartao-hotelaria .portal-cartao-icone { background: var(--hotelaria-fundo); color: var(--hotelaria); }
+.portal-cartao h2 { font-size: 1.15rem; }
+.portal-cartao p { margin: 0; color: var(--texto-suave); font-size: 0.9rem; line-height: 1.5; }
+.portal-cartao-ir { margin-top: auto; padding-top: 4px; font-weight: 700; font-size: 0.88rem; color: var(--primaria); }
+.portal-cartao-hotelaria .portal-cartao-ir { color: var(--hotelaria); }
+.portal-rodape { margin-top: 44px; color: var(--texto-suave); font-size: 0.8rem; }
+
+/* ==========================================================================
+   Tela de erro (compartilhado)
+   ========================================================================== */
+.tela-erro { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.tela-erro-caixa { text-align: center; background: var(--branco); padding: 44px 36px; border-radius: var(--raio); box-shadow: var(--sombra-media); max-width: 420px; }
+.tela-erro-codigo { font-size: 3rem; font-weight: 900; color: var(--primaria); display: block; margin-bottom: 8px; }
+.tela-erro-caixa p { color: var(--texto-suave); margin-bottom: 22px; }
+
+/* ==========================================================================
+   Cabeçalho administrativo (Dashboard/Central/Histórico dos dois módulos)
+   ========================================================================== */
+.app-admin { min-height: 100vh; }
+.topo-admin, .topo {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 28px; background: var(--branco); border-bottom: 1px solid var(--borda);
+  position: sticky; top: 0; z-index: 50; flex-wrap: wrap; gap: 12px;
+}
+.marca-admin, .marca { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.15rem; color: var(--primaria); }
+.marca-admin .selo-admin, .marca .selo { width: 38px; height: 38px; object-fit: contain; display: block; }
+.titulos-admin h1 { font-size: 1.15rem; font-weight: 800; color: var(--primaria); }
+.titulos-admin span, .marca .subtitulo {
+  display: block; font-size: 0.68rem; font-weight: 600; letter-spacing: 2px;
+  color: var(--texto-suave); text-transform: uppercase;
+}
+.nav-admin, .topo nav { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.nav-admin a, .topo nav a, .botao-sair {
+  min-height: var(--alvo-toque-min); display: inline-flex; align-items: center;
+  padding: 9px 16px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; color: var(--texto-suave);
+  border: none; background: transparent;
+}
+.nav-admin a:hover, .topo nav a:hover, .botao-sair:hover,
+.nav-admin a.ativo, .topo nav a.ativo { background: var(--primaria-clara); color: var(--primaria); }
+
+.pagina-admin, .pagina { max-width: 1200px; margin: 0 auto; padding: 24px 24px 60px; }
+.cabecalho-pagina { margin-bottom: 22px; }
+.cabecalho-pagina h1 { margin: 0 0 4px; font-size: 1.5rem; }
+.cabecalho-pagina p { margin: 0; color: var(--texto-suave); font-size: 0.9rem; }
+
+/* ==========================================================================
+   Cartões de estatística (topo da Central)
+   ========================================================================== */
+.grade-stats-central { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.stat-central { background: var(--branco); border-radius: 16px; padding: 18px 20px; box-shadow: var(--sombra); }
+.stat-central .valor { display: block; font-size: 1.8rem; font-weight: 800; }
+.stat-central .rotulo { color: var(--texto-suave); font-size: 0.82rem; }
+.stat-central.acento-atencao .valor { color: var(--atencao); }
+.stat-central.acento-critica .valor { color: var(--critica); }
+.stat-central.acento-sucesso .valor { color: var(--sucesso); }
+
+/* ==========================================================================
+   Painel "Atenção imediata"
+   ========================================================================== */
+.painel-atencao {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--critica);
+  border-radius: var(--raio); padding: 16px 18px; margin-bottom: 20px;
+  box-shadow: var(--sombra);
+}
+.painel-atencao-titulo { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--texto); margin-bottom: 10px; font-size: 0.95rem; }
+.painel-atencao-lista { display: flex; flex-wrap: wrap; gap: 10px; }
+.item-atencao {
+  display: flex; align-items: center; gap: 8px; background: var(--fundo);
+  border-radius: 12px; padding: 8px 14px; font-size: 0.85rem; font-weight: 700;
+  border: 1px solid var(--borda); min-height: var(--alvo-toque-min); color: var(--texto);
+}
+.item-atencao:hover { background: var(--primaria-clara); border-color: var(--primaria-suave); }
+.painel-atencao-vazio { color: var(--texto-suave); font-size: 0.85rem; font-weight: 600; }
+
+/* ==========================================================================
+   Dashboard: cartões e gráficos de barra (compartilhado)
+   ========================================================================== */
+.grade-cartoes-dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.cartao-dash { background: var(--branco); border-radius: 18px; padding: 20px; box-shadow: var(--sombra); }
+.cartao-dash .rotulo-dash { font-size: 0.78rem; color: var(--texto-suave); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+.cartao-dash .valor-dash { font-size: 2rem; font-weight: 800; margin-top: 6px; color: var(--texto); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cartao-dash.destaque .valor-dash { color: var(--primaria); }
+.cartao-dash.acento-critica .valor-dash { color: var(--critica); }
+
+.grade-graficos { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
+.painel-grafico { background: var(--branco); border-radius: 18px; padding: 20px; box-shadow: var(--sombra); }
+.painel-grafico h3 { margin: 0 0 16px; font-size: 1rem; }
+.barra-grafico-linha { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.barra-grafico-linha .rotulo-barra { width: 130px; font-size: 0.82rem; font-weight: 600; color: var(--texto-suave); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barra-grafico-linha .trilha-barra { flex: 1; background: var(--fundo); border-radius: 8px; height: 14px; overflow: hidden; }
+.barra-grafico-linha .preenchimento-barra { height: 100%; background: linear-gradient(90deg, var(--primaria-suave), var(--primaria)); border-radius: 8px; }
+.barra-grafico-linha .valor-barra { width: 32px; text-align: right; font-weight: 700; font-size: 0.82rem; flex-shrink: 0; }
+
+.grafico-periodo { display: flex; align-items: flex-end; gap: 6px; height: 160px; padding-top: 10px; }
+.coluna-periodo { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; height: 100%; min-width: 0; }
+.coluna-periodo .barra-vertical { width: 100%; background: linear-gradient(180deg, var(--primaria-suave), var(--primaria)); border-radius: 6px 6px 2px 2px; min-height: 4px; }
+.coluna-periodo .legenda-periodo { font-size: 0.62rem; color: var(--texto-suave); white-space: nowrap; }
+
+.vazio-dash { text-align: center; color: var(--texto-suave); padding: 40px; font-size: 0.88rem; }
+
+/* ==========================================================================
+   Filtros (compartilhado)
+   ========================================================================== */
+.barra-filtros, .filtros { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.filtros select, .filtros input {
+  min-height: var(--alvo-toque-min); padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--borda);
+  background: var(--branco); font-weight: 600; font-size: 0.86rem; color: var(--texto);
+}
+.chips-filtro { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  min-height: 38px; border: 1.5px solid var(--borda); background: var(--branco); border-radius: 20px;
+  padding: 8px 16px; font-size: 0.82rem; font-weight: 700; color: var(--texto-suave);
+}
+.chip.ativo { background: var(--primaria); color: #fff; border-color: var(--primaria); }
+.chip-critica.ativo { background: var(--critica); border-color: var(--critica); }
+.chip-alta.ativo { background: var(--alta); border-color: var(--alta); }
+.chip-media.ativo { background: var(--media); border-color: var(--media); color: #fff; }
+.chip-baixa.ativo { background: var(--baixa); border-color: var(--baixa); }
+.botao-filtros-avancados {
+  margin-left: auto; min-height: 38px; display: flex; align-items: center; gap: 6px; background: var(--branco);
+  border: 1.5px solid var(--borda); border-radius: 20px; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; color: var(--texto);
+}
+.botao-filtros-avancados svg { width: 16px; height: 16px; }
+
+.painel-filtros-avancados {
+  display: flex; flex-wrap: wrap; gap: 14px; background: var(--branco); border: 1px solid var(--borda);
+  border-radius: 14px; padding: 16px; margin-bottom: 16px; align-items: flex-end;
+}
+.painel-filtros-sempre-visivel { display: flex; }
+.campo-filtro { display: flex; flex-direction: column; gap: 6px; min-width: 150px; flex: 1 1 150px; }
+.campo-filtro label { font-size: 0.74rem; font-weight: 700; color: var(--texto-suave); text-transform: uppercase; }
+.campo-filtro select, .campo-filtro input {
+  min-height: var(--alvo-toque-min); padding: 9px 12px; border-radius: 10px; border: 1.5px solid var(--borda); font-size: 0.9rem;
+}
+.campo-filtro select:focus, .campo-filtro input:focus { outline: none; border-color: var(--primaria); }
+.campo-filtro-busca { flex: 2 1 220px; }
+
+/* Chips de "filtros ativos" — mostra o que está filtrando agora, com um "×"
+   para remover individualmente. */
+.filtros-ativos { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 14px; }
+.filtro-ativo-chip {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--primaria-clara); color: var(--primaria-escura);
+  border-radius: 20px; padding: 5px 8px 5px 12px; font-size: 0.78rem; font-weight: 700; border: none;
+}
+.filtro-ativo-chip button {
+  background: rgba(255,255,255,0.6); border: none; border-radius: 50%; width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center; color: inherit; font-size: 0.72rem; line-height: 1;
+}
+
+/* ==========================================================================
+   Listas de chamados administrativas (Central/Histórico dos dois módulos)
+   ========================================================================== */
+.lista-chamados-admin, .lista-historico { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+.estado-vazio {
+  grid-column: 1 / -1; text-align: center; padding: 46px 20px; color: var(--texto-suave);
+  background: var(--branco); border-radius: 14px; border: 1.5px dashed var(--borda);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+.cartao-chamado-admin {
+  background: var(--branco); border-radius: 14px; padding: 16px 18px; box-shadow: var(--sombra); cursor: pointer;
+  transition: transform .1s ease, box-shadow .15s ease; border: none; text-align: left; width: 100%; font: inherit; color: inherit;
+}
+.cartao-chamado-admin:hover, .cartao-chamado-admin:focus-visible { transform: translateY(-2px); box-shadow: var(--sombra-media); }
+.linha-cartao-admin { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
+.leito-etiqueta-admin { font-weight: 800; font-size: 1.02rem; }
+.categoria-cartao-admin { font-size: 0.88rem; color: var(--texto); margin-bottom: 10px; }
+.rodape-cartao-admin { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.76rem; color: var(--texto-suave); }
+
+/* ==========================================================================
+   Modal (compartilhado — Enfermagem usa .modal-chamado-admin, Hotelaria usa
+   .modal-chamado; mesmo comportamento visual para os dois)
+   ========================================================================== */
+.fundo-modal {
+  position: fixed; inset: 0; background: rgba(16, 24, 40, 0.5);
+  display: none; align-items: center; justify-content: center; padding: 16px; z-index: 200;
+}
+.fundo-modal.aberto { display: flex; }
+.modal-chamado-admin, .modal-chamado {
+  background: var(--branco); border-radius: var(--raio); padding: 24px; width: 100%; max-width: 500px;
+  max-height: 90vh; overflow-y: auto; box-shadow: var(--sombra-forte);
+}
+.modal-topo-admin, .modal-topo { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
+.modal-topo-admin h2, .modal-topo h2 { font-size: 1.2rem; margin: 0 0 6px; }
+.fechar-modal {
+  width: var(--alvo-toque-min); height: var(--alvo-toque-min); border-radius: 12px; border: none;
+  background: var(--fundo); font-size: 0.9rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+}
+.bloco-info-admin, .bloco-info-modal { display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; background: var(--fundo); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; line-height: 1.5; }
+.linha-acoes-admin, .linha-acoes-modal { display: flex; flex-direction: column; gap: 10px; }
+.etiqueta-somente-leitura {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; color: var(--texto-suave);
+  background: var(--fundo); padding: 5px 10px; border-radius: 20px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px;
+}
+
+/* ==========================================================================
+   Abas simples (usadas no mobile do quadro Kanban da Central de Hotelaria)
+   ========================================================================== */
+.abas-mobile { display: none; gap: 6px; margin-bottom: 14px; }
+.abas-mobile button {
+  flex: 1; min-height: var(--alvo-toque-min); border: 1.5px solid var(--borda); background: var(--branco);
+  border-radius: 12px; font-weight: 700; font-size: 0.84rem; color: var(--texto-suave);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.abas-mobile button.ativo { background: var(--primaria); border-color: var(--primaria); color: #fff; }
+.abas-mobile .contagem-aba { background: rgba(0,0,0,0.08); border-radius: 20px; padding: 1px 7px; font-size: 0.72rem; }
+.abas-mobile button.ativo .contagem-aba { background: rgba(255,255,255,0.25); }
+
+/* Paginação simples (Histórico) */
+.paginacao { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 20px; font-size: 0.86rem; color: var(--texto-suave); }
+.paginacao button { min-height: var(--alvo-toque-min); padding: 8px 16px; }
+
+/* ==========================================================================
+   Responsivo — mobile-first: a base do projeto já é pensada para celular;
+   os breakpoints abaixo afinam progressivamente para telas maiores E para
+   as larguras de celular mais estreitas (320-430px), em vez de um único
+   salto genérico.
+   ========================================================================== */
+
+/* Celulares em geral (≤600px) */
+@media (max-width: 600px) {
+  .topo-admin, .topo { padding: 12px 14px; }
+  .marca-admin, .marca { font-size: 1rem; gap: 8px; }
+  .marca-admin .selo-admin, .marca .selo { width: 32px; height: 32px; border-radius: 10px; }
+  .titulos-admin span, .marca .subtitulo { font-size: 0.6rem; letter-spacing: 1.2px; }
+  .nav-admin, .topo nav { gap: 2px; }
+  .nav-admin a, .topo nav a, .botao-sair { padding: 8px 10px; font-size: 0.8rem; }
+
+  .pagina-admin, .pagina { padding: 14px 12px 40px; }
+  .cabecalho-pagina h1 { font-size: 1.25rem; }
+
+  .filtros { flex-direction: column; align-items: stretch; }
+  .filtros select, .filtros input { width: 100%; }
+  .painel-filtros-avancados { flex-direction: column; align-items: stretch; }
+  .campo-filtro { min-width: 0; }
+  .botao-filtros-avancados { margin-left: 0; }
+
+  .grade-cartoes-dash { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cartao-dash { padding: 14px; }
+  .cartao-dash .valor-dash { font-size: 1.5rem; }
+  .grade-graficos { grid-template-columns: 1fr; }
+
+  .painel-grafico { padding: 14px; }
+  .barra-grafico-linha .rotulo-barra { width: 76px; font-size: 0.72rem; }
+
+  .modal-chamado-admin, .modal-chamado { padding: 18px; border-radius: 18px; max-height: 94vh; }
+  .bloco-info-admin, .bloco-info-modal { font-size: 0.84rem; }
+  .linha-acoes-modal .botao { flex: 1; }
+
+  .lista-chamados-admin, .lista-historico { grid-template-columns: 1fr; }
+
+  .portal-caixa .portal-titulo { font-size: 1.1rem; }
+  .portal-legenda { font-size: 0.92rem; margin-bottom: 24px; }
+  .portal-cartao { padding: 20px; }
+  .portal-grade { gap: 14px; }
+}
+
+/* Celulares estreitos (390px e abaixo — iPhone SE/mini, Android compactos) */
+@media (max-width: 400px) {
+  .grade-stats-central { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-central { padding: 14px 16px; }
+  .stat-central .valor { font-size: 1.5rem; }
+  .painel-filtros-avancados { padding: 12px; }
+  .cartao-chamado-admin { padding: 14px; }
+}
+
+/* Muito estreitos (320-360px) */
+@media (max-width: 360px) {
+  .grade-cartoes-dash { grid-template-columns: 1fr; }
+  .nav-admin a span, .topo nav a span, .botao-sair span { display: none; }
+  .cartao-login, .modal-chamado-admin, .modal-chamado { padding: 16px; }
+}
+
+/* Tablets */
+@media (max-width: 900px) {
+  .grade-graficos { grid-template-columns: 1fr; }
+  .portal-grade { grid-template-columns: 1fr; max-width: 420px; }
+}
+
+/* Notebooks / desktop */
+@media (min-width: 1200px) {
+  .lista-chamados-admin, .lista-historico { gap: 18px; }
+}
+
+/* Telas grandes */
+@media (min-width: 1700px) {
+  .pagina-admin, .pagina { max-width: 1600px; }
+  .portal-caixa { max-width: 1040px; }
+  .cartao-dash .valor-dash { font-size: 2.2rem; }
+}

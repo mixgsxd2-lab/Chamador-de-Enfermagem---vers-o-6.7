@@ -1,0 +1,112 @@
+{% extends "enfermagem/base.html" %}
+{% block titulo %}Histórico — Chamador de Enfermagem{% endblock %}
+
+{% block conteudo %}
+<div class="app-admin">
+  <header class="topo-admin">
+    <div class="marca-admin">
+      <img src="{{ url_for('static', filename='img/hotelaria-logo-icon.png') }}" alt="Hospital Rio Grande" class="selo-admin">
+      <div class="titulos-admin">
+        <h1>Histórico de Chamados</h1>
+        <span>Hospital Rio Grande</span>
+      </div>
+    </div>
+    <nav class="nav-admin">
+      <a href="{{ url_for('enfermagem_pages.dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('enfermagem_pages.central') }}">Central</a>
+      <a href="{{ url_for('enfermagem_pages.historico') }}" class="ativo">Histórico</a>
+      <a href="{{ url_for('enfermagem_pages.logout') }}" class="botao-sair">Sair</a>
+    </nav>
+  </header>
+
+  <div class="pagina-admin">
+    <div class="grade-stats-central" id="gradeMetricas">
+      <div class="stat-central"><span class="valor" id="mTotal">0</span><span class="rotulo">Total de chamados</span></div>
+      <div class="stat-central"><span class="valor" id="mTempoEspera">-</span><span class="rotulo">Tempo médio de espera</span></div>
+      <div class="stat-central"><span class="valor" id="mTempoAtendimento">-</span><span class="rotulo">Tempo médio de atendimento</span></div>
+      <div class="stat-central"><span class="valor" id="mAvaliacao">-</span><span class="rotulo">Avaliação média</span></div>
+    </div>
+
+    <div class="painel-filtros-avancados painel-filtros-sempre-visivel">
+      <div class="campo-filtro campo-filtro-busca">
+        <label for="filtroBusca">Buscar</label>
+        <input type="text" id="filtroBusca" placeholder="Leito, categoria, detalhe...">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroStatus">Status</label>
+        <select id="filtroStatus">
+          <option value="">Todos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="em_atendimento">Em atendimento</option>
+          <option value="finalizado">Finalizados</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroPrioridade">Prioridade</label>
+        <select id="filtroPrioridade">
+          <option value="">Todas</option>
+          <option value="critica">🔴 Crítica</option>
+          <option value="alta">🟠 Alta</option>
+          <option value="media">🟡 Média</option>
+          <option value="baixa">🟢 Baixa</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroAndar">Andar</label>
+        <select id="filtroAndar">
+          <option value="">Todos</option>
+          {% for andar in andares %}<option value="{{ andar }}">{{ andar }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroLeito">Leito</label>
+        <input type="text" id="filtroLeito" placeholder="Ex.: 205">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroCategoria">Tipo de solicitação</label>
+        <select id="filtroCategoria">
+          <option value="">Todos</option>
+          {% for categoria in categorias %}{% if categoria != "Outros" %}<option value="{{ categoria }}">{{ categoria }}</option>{% endif %}{% endfor %}
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroPeriodo">Período</label>
+        <select id="filtroPeriodo">
+          <option value="">Tudo</option>
+          <option value="hoje">Hoje</option>
+          <option value="7dias">Últimos 7 dias</option>
+          <option value="30dias">Últimos 30 dias</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroOrdenar">Ordenar por</label>
+        <select id="filtroOrdenar">
+          <option value="recentes">Mais recentes</option>
+          <option value="antigos">Mais antigos</option>
+          <option value="prioridade">Prioridade</option>
+        </select>
+      </div>
+      <button class="botao botao-fantasma pequeno" id="botaoLimparFiltrosHistorico" type="button">Limpar filtros</button>
+    </div>
+
+    <div class="filtros-ativos" id="filtrosAtivos"></div>
+
+    <div class="lista-chamados-admin" id="listaHistorico">
+      <div class="estado-vazio">Carregando histórico...</div>
+    </div>
+
+    <div class="paginacao" id="paginacaoHistorico" hidden>
+      <span id="textoPaginacao"></span>
+      <button class="botao botao-fantasma pequeno" id="botaoCarregarMais" type="button">Carregar mais</button>
+    </div>
+  </div>
+</div>
+
+<div class="fundo-modal" id="fundoModal">
+  <div class="modal-chamado-admin" id="modalChamado" role="dialog" aria-modal="true" aria-label="Detalhe do chamado"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/enfermagem/historico.js') }}"></script>
+{% endblock %}

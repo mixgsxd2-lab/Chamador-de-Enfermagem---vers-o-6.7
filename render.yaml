@@ -1,0 +1,49 @@
+# Blueprint de deploy no Render — https://render.com/docs/blueprint-spec
+#
+# Como usar:
+#   1. Suba este repositório para o GitHub.
+#   2. No Render, clique em "New" -> "Blueprint" e aponte para o repositório.
+#      O Render lê este arquivo e cria o serviço sozinho.
+#
+# IMPORTANTE — banco de dados (SQLite):
+#   O bloco `disk` abaixo cria um disco persistente para o arquivo .db não
+#   ser apagado a cada deploy/reinício. Disco persistente exige um plano
+#   pago (Starter ou superior) — não está disponível no plano Free.
+#   Se for só testar no plano Free, apague o bloco `disk` e a variável
+#   DATABASE_PATH abaixo: o banco volta a ser um arquivo local do próprio
+#   serviço, mas será REINICIADO (perde os chamados) toda vez que o Render
+#   reiniciar ou fizer um novo deploy. Para uso real de um hospital, o
+#   disco persistente (ou um plano com banco gerenciado) é necessário.
+services:
+  - type: web
+    name: hospital-rio-grande
+    runtime: python
+    rootDir: hospital_rio_grande
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # 1 worker + várias threads: evita duplicar a tarefa de segundo plano
+    # (expiração de confirmações da Hotelaria) e mantém o limitador de
+    # tentativas de login (em memória) funcionando corretamente — os dois
+    # dependem de um único processo.
+    startCommand: gunicorn app:app --workers 1 --threads 4 --timeout 120
+    envVars:
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: HOTELARIA_USUARIO
+        value: admin
+      - key: HOTELARIA_SENHA
+        generateValue: true
+      - key: ENFERMAGEM_USUARIO
+        value: enfermagem
+      - key: ENFERMAGEM_SENHA
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /var/data/hospital_rio_grande.db
+    disk:
+      name: dados-hospital
+      mountPath: /var/data
+      sizeGB: 1

@@ -1,0 +1,192 @@
+/* ==========================================================================
+   Hospital Rio Grande — Central de Hotelaria
+   Estilos ESPECÍFICOS deste módulo (fluxo do paciente, cartões de serviço,
+   quadro Kanban da Central, chat, avaliação). Tudo que é compartilhado com
+   a Enfermagem (tokens de cor, botões, cabeçalho admin, dashboard, filtros,
+   modal, login, portal) vive em base.css.
+   ========================================================================== */
+@import url("base.css");
+
+/* ---------- Área do paciente (mobile-first) ---------- */
+.app-paciente {
+  max-width: 520px; margin: 0 auto; min-height: 100vh;
+  background: var(--fundo); display: flex; flex-direction: column;
+}
+
+.cabecalho-paciente {
+  padding: 22px 20px 18px;
+  background: linear-gradient(135deg, var(--primaria-escura), var(--primaria));
+  color: #fff;
+  border-radius: 0 0 26px 26px;
+}
+.cabecalho-paciente .linha-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cabecalho-paciente .voltar {
+  width: var(--alvo-toque-min); height: var(--alvo-toque-min); border-radius: 10px;
+  background: rgba(255,255,255,0.18);
+  display: flex; align-items: center; justify-content: center;
+  border: none; color: #fff;
+}
+.cabecalho-paciente .marca-mini { font-weight: 800; font-size: 0.95rem; }
+.cabecalho-paciente h1 { font-size: 1.5rem; margin: 0 0 4px; }
+.cabecalho-paciente p { margin: 0; opacity: 0.9; font-size: 0.9rem; }
+.selo-leito {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.2);
+  padding: 6px 12px; border-radius: 30px;
+  font-size: 0.82rem; font-weight: 700; margin-top: 10px;
+}
+
+.tela-paciente { flex: 1; padding: 22px 18px 100px; }
+
+/* Passo 1: Andar → Leito (mesmo componente `.campo`/select de base.css já
+   usado pela Enfermagem — unificado para que os dois módulos peçam o leito
+   da mesma forma, sem texto livre). */
+.form-leito { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.aviso-lgpd {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--primaria-clara);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 0.82rem;
+  color: var(--primaria-escura);
+  line-height: 1.5;
+}
+
+/* Cartões de serviço */
+.grade-servicos { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.cartao-servico {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--branco); border-radius: var(--raio); padding: 18px;
+  border: 2px solid var(--borda); box-shadow: var(--sombra);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  text-align: left; width: 100%; min-height: var(--alvo-toque-min);
+}
+.cartao-servico:hover, .cartao-servico:focus-visible { transform: translateY(-3px); box-shadow: var(--sombra-media); border-color: var(--primaria-suave); }
+.cartao-servico.selecionado { border-color: var(--primaria); background: var(--primaria-clara); }
+.cartao-servico .icone-servico {
+  flex-shrink: 0; width: 54px; height: 54px; border-radius: 14px;
+  background: var(--primaria-clara);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--primaria);
+}
+.cartao-servico .texto-servico h3 { margin: 0 0 4px; font-size: 1.02rem; }
+.cartao-servico .texto-servico p { margin: 0; font-size: 0.82rem; color: var(--texto-suave); line-height: 1.4; }
+
+/* Descrição do chamado */
+.campo-descricao textarea {
+  width: 100%; min-height: 140px; padding: 16px; border-radius: 16px;
+  border: 2px solid var(--borda); font-size: 1rem; resize: vertical; background: var(--branco);
+}
+.campo-descricao textarea:focus { outline: none; border-color: var(--primaria); }
+.rotulo { font-weight: 700; font-size: 0.95rem; margin-bottom: 10px; display: block; }
+
+.barra-inferior-fixa {
+  position: sticky; bottom: 0; max-width: 520px; margin: 0 auto;
+  padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--fundo) 70%, transparent);
+}
+
+/* Status do chamado */
+.cartao-status { background: var(--branco); border-radius: var(--raio); padding: 24px 20px; box-shadow: var(--sombra); margin-top: 10px; text-align: center; }
+.trilha-status { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 22px 0 6px; }
+.passo-status { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+.passo-status .bola {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--borda); color: var(--texto-suave);
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; border: 3px solid var(--fundo);
+}
+.passo-status.ativo .bola { background: var(--primaria); color: #fff; }
+.passo-status.concluido .bola { background: var(--sucesso); color: #fff; }
+.passo-status span.rotulo-passo { font-size: 0.72rem; font-weight: 700; color: var(--texto-suave); text-align: center; }
+.passo-status.ativo span.rotulo-passo, .passo-status.concluido span.rotulo-passo { color: var(--texto); }
+.linha-status { flex: 0.5; height: 3px; background: var(--borda); margin-top: -22px; }
+.linha-status.preenchida { background: var(--sucesso); }
+
+.selo-status-grande { display: inline-block; padding: 8px 18px; border-radius: 30px; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px; }
+.selo-status-grande.pendente { background: var(--alta-fundo); color: var(--alta); }
+.selo-status-grande.em_andamento { background: var(--primaria-clara); color: var(--primaria); }
+.selo-status-grande.finalizado { background: var(--baixa-fundo); color: var(--baixa); }
+
+.resumo-chamado { text-align: left; background: var(--fundo); border-radius: 14px; padding: 14px 16px; margin-top: 16px; font-size: 0.88rem; color: var(--texto-suave); }
+.resumo-chamado b { color: var(--texto); }
+
+/* Avaliação com estrelas */
+.caixa-avaliacao { margin-top: 16px; background: var(--branco); border-radius: var(--raio); box-shadow: var(--sombra); padding: 20px; text-align: center; }
+.estrelas { display: flex; justify-content: center; gap: 8px; margin: 14px 0; }
+.estrelas button { background: none; border: none; font-size: 2rem; color: var(--borda); transition: transform .1s ease, color .1s ease; line-height: 1; min-width: var(--alvo-toque-min); min-height: var(--alvo-toque-min); }
+.estrelas button.ativa { color: #f2b90c; }
+.estrelas button:hover { transform: scale(1.15); }
+.caixa-avaliacao textarea { width: 100%; margin-top: 10px; border-radius: 12px; border: 1.5px solid var(--borda); padding: 12px; min-height: 70px; font-size: 0.88rem; }
+
+.mensagem-agradecimento { text-align: center; padding: 40px 20px; }
+.mensagem-agradecimento .icone-check {
+  width: 70px; height: 70px; border-radius: 50%; background: var(--baixa-fundo); color: var(--baixa);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+}
+
+.indicador-passos { display: flex; gap: 6px; margin-top: 14px; }
+.indicador-passos span { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.3); }
+.indicador-passos span.ativo { background: #fff; }
+
+/* ---------- Central de serviços (quadro Kanban) ---------- */
+.colunas-central { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.coluna-central { display: flex; flex-direction: column; gap: 12px; }
+.titulo-coluna {
+  font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-suave);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 4px;
+}
+.contagem-coluna { background: var(--primaria-clara); color: var(--primaria); border-radius: 20px; padding: 2px 10px; font-size: 0.78rem; }
+
+.cartao-chamado {
+  background: var(--branco); border-radius: 14px; padding: 16px 18px; box-shadow: var(--sombra);
+  border-left: 4px solid var(--primaria); cursor: pointer; transition: transform .12s ease, box-shadow .12s ease;
+  border-top: none; border-right: none; border-bottom: none; text-align: left; width: 100%; font: inherit; color: inherit;
+}
+.cartao-chamado:hover, .cartao-chamado:focus-visible { transform: translateY(-2px); box-shadow: var(--sombra-media); }
+.cartao-chamado.pendente { border-left-color: var(--alta); }
+.cartao-chamado.em_andamento { border-left-color: var(--primaria); }
+.cartao-chamado.finalizado { border-left-color: var(--baixa); }
+.linha-cartao-topo { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+
+/* Local em destaque (andar + leito) — âncora visual do cartão, para o
+   andar/leito serem identificados à primeira vista (mesmo papel que
+   `.leito-etiqueta-admin` cumpre nos cartões da Central de Enfermagem, só
+   que aqui com o andar também em evidência, não só o leito). */
+.local-cartao { display: flex; flex-direction: column; gap: 1px; }
+.local-andar { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--texto-suave); }
+.local-leito { font-size: 1.15rem; font-weight: 800; color: var(--texto); }
+
+.leito-etiqueta { font-weight: 800; font-size: 1rem; }
+.servico-etiqueta {
+  flex-shrink: 0; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  background: var(--primaria-clara); color: var(--primaria); padding: 3px 9px; border-radius: 20px;
+}
+.descricao-cartao { font-size: 0.88rem; color: var(--texto); margin: 0 0 10px; line-height: 1.4; }
+.rodape-cartao {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 0.76rem; color: var(--texto-suave);
+}
+.hora-cartao { font-size: 0.72rem; color: var(--texto-suave); }
+.acoes-cartao { display: flex; gap: 8px; margin-top: 10px; }
+.vazio-coluna { text-align: center; color: var(--texto-suave); font-size: 0.85rem; padding: 30px 10px; background: var(--branco); border-radius: 14px; border: 1.5px dashed var(--borda); }
+
+.indicadores-cartao { display: flex; align-items: center; gap: 6px; }
+.ponto-indicador { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px var(--branco); }
+.ponto-indicador.laranja { background: var(--alta); }
+.ponto-indicador.vermelho { background: var(--critica); }
+
+.avaliacao-exibicao { display: flex; align-items: center; gap: 6px; color: #92720a; font-weight: 700; }
+
+/* ---------- Utilidades ---------- */
+.svg-icone { width: 26px; height: 26px; }
+.svg-icone-pequeno { width: 18px; height: 18px; }
+
+/* Quadro Kanban em telas menores: 3 abas em vez de 3 colunas empilhadas —
+   evita rolar por 3 listas inteiras uma atrás da outra no celular. */
+@media (max-width: 700px) {
+  .abas-mobile { display: flex; }
+  .colunas-central { display: block; }
+  .coluna-central { display: none; }
+  .coluna-central.aba-ativa { display: flex; }
+  .titulo-coluna { display: none; }
+}
+

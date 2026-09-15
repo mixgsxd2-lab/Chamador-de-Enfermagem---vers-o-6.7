@@ -1,0 +1,144 @@
+/* ==========================================================================
+   Hospital Rio Grande — Chamador de Enfermagem
+   Estilos ESPECÍFICOS deste módulo (fluxo do paciente, categorias, banner de
+   status, timeline de acompanhamento, avaliação). Tudo que é compartilhado
+   com a Hotelaria (tokens de cor, botões, cabeçalho admin, dashboard,
+   filtros, modal, login, portal) vive em base.css.
+   ========================================================================== */
+@import url("base.css");
+
+/* ==========================================================================
+   Fluxo do paciente (mobile-first)
+   ========================================================================== */
+.app-paciente {
+  min-height: 100vh; display: flex; flex-direction: column;
+  max-width: 520px; margin: 0 auto; background: var(--fundo);
+}
+/* Cabeçalho em degradê azul — sem a logo do hospital (item já decidido em
+   rodada anterior do projeto; ver README). */
+.cabecalho-paciente {
+  padding: 22px 20px 18px;
+  background: linear-gradient(135deg, var(--primaria-escura), var(--primaria));
+  color: #fff;
+  border-radius: 0 0 26px 26px;
+  position: sticky; top: 0; z-index: 5;
+}
+.linha-topo-paciente { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.marca-paciente { font-weight: 800; font-size: 0.95rem; letter-spacing: 0.2px; }
+.botao-voltar {
+  width: var(--alvo-toque-min); height: var(--alvo-toque-min); border-radius: 10px; border: none; background: rgba(255,255,255,0.18);
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.botao-voltar svg { width: 18px; height: 18px; }
+.trilha-passos { display: flex; gap: 6px; }
+.trilha-passos span { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.3); }
+.trilha-passos span.ativo { background: #fff; }
+
+.tela-paciente { flex: 1; padding: 22px 18px 100px; }
+.barra-inferior-paciente {
+  position: fixed; bottom: 0; left: 0; right: 0; max-width: 520px; margin: 0 auto;
+  padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, var(--fundo) 60%, rgba(244,246,251,0));
+}
+
+.cabecalho-passo { margin-bottom: 18px; }
+.cabecalho-passo h1 { font-size: 1.45rem; font-weight: 800; margin-bottom: 4px; }
+.cabecalho-passo p { color: var(--texto-suave); font-size: 0.95rem; }
+
+.cartao-passo { background: var(--branco); border-radius: var(--raio); padding: 22px; box-shadow: var(--sombra); }
+
+.aviso-lgpd {
+  margin-top: 18px; display: flex; gap: 10px; align-items: flex-start;
+  background: var(--primaria-clara); border-radius: 12px; padding: 12px 14px;
+  font-size: 0.8rem; color: var(--primaria-escura); line-height: 1.4;
+}
+
+.resumo-linha {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--borda); font-size: 0.92rem;
+}
+.resumo-linha:last-child { border-bottom: none; }
+.resumo-linha span { color: var(--texto-suave); }
+.resumo-linha b { text-align: right; font-weight: 700; }
+
+/* ---------- Passo 2: categorias ---------- */
+.grade-categorias { display: flex; flex-direction: column; gap: 12px; }
+.cartao-categoria {
+  display: flex; align-items: center; gap: 14px; text-align: left;
+  background: var(--branco); border: 1.5px solid var(--borda); border-radius: 16px;
+  padding: 18px; box-shadow: var(--sombra); min-height: var(--alvo-toque-min);
+  transition: transform .1s ease, border-color .15s ease;
+}
+.cartao-categoria:hover { transform: translateY(-2px); }
+.icone-categoria {
+  flex-shrink: 0; width: 50px; height: 50px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.icone-categoria svg { width: 26px; height: 26px; }
+.texto-categoria { display: flex; flex-direction: column; gap: 2px; }
+.texto-categoria strong { font-size: 1.05rem; }
+.texto-categoria small { color: var(--texto-suave); font-size: 0.82rem; }
+
+.cor-critica .icone-categoria { background: var(--critica-fundo); color: var(--critica); }
+.cor-critica { border-left: 4px solid var(--critica); }
+.cor-alta .icone-categoria { background: var(--alta-fundo); color: var(--alta); }
+.cor-alta { border-left: 4px solid var(--alta); }
+.cor-media .icone-categoria { background: var(--media-fundo); color: var(--media); }
+.cor-media { border-left: 4px solid var(--media); }
+.cor-baixa .icone-categoria { background: var(--baixa-fundo); color: var(--baixa); }
+.cor-baixa { border-left: 4px solid var(--baixa); }
+.cor-hotelaria .icone-categoria { background: var(--hotelaria-fundo); color: var(--hotelaria); }
+.cor-hotelaria { border-left: 4px solid var(--hotelaria); }
+
+/* ---------- Passo 3: subopções ---------- */
+.lista-subcategorias { display: flex; flex-direction: column; gap: 10px; }
+.opcao-subcategoria {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--branco); border: 1.5px solid var(--borda); border-radius: 14px;
+  padding: 16px 16px; text-align: left; font-size: 0.98rem; font-weight: 600;
+  min-height: var(--alvo-toque-min); width: 100%;
+}
+.opcao-subcategoria .marcador-opcao {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--borda); flex-shrink: 0;
+}
+.opcao-subcategoria.selecionada { border-color: var(--primaria); background: var(--primaria-clara); }
+.opcao-subcategoria.selecionada .marcador-opcao { border-color: var(--primaria); background: var(--primaria); box-shadow: inset 0 0 0 3px #fff; }
+.opcao-subcategoria:disabled { opacity: 0.7; }
+
+/* ---------- Confirmação ---------- */
+.icone-confirmacao {
+  width: 76px; height: 76px; border-radius: 50%; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.icone-sucesso { background: var(--baixa-fundo); color: var(--baixa); }
+.icone-hotelaria { background: var(--hotelaria-fundo); color: var(--hotelaria); }
+.cartao-passo h2 { font-size: 1.3rem; margin-bottom: 6px; }
+.cartao-passo .resumo-linha { text-align: left; }
+
+/* ---------- Banner de status (acompanhamento do paciente) — variantes de
+   cor específicas da Enfermagem; o "shell" genérico (.banner-status) e a
+   variante "sem conexão" (comum aos dois módulos) vivem em base.css. ---------- */
+.banner-status-pendente { background: var(--alta-fundo); color: var(--alta); }
+.banner-status-em_atendimento { background: var(--primaria-clara); color: var(--primaria); }
+.banner-status-finalizado { background: var(--baixa-fundo); color: var(--baixa); }
+
+/* ---------- Timeline de acompanhamento ---------- */
+.timeline-acompanhamento { display: flex; align-items: center; margin: 4px 0 18px; }
+.passo-timeline { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.passo-timeline span { font-size: 0.68rem; font-weight: 700; color: var(--texto-suave); text-align: center; width: 78px; }
+.bola-timeline {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--borda); background: var(--branco);
+  display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: var(--texto-suave);
+}
+.passo-timeline.concluido .bola-timeline { background: var(--primaria); border-color: var(--primaria); color: #fff; }
+.passo-timeline.ativo .bola-timeline { border-color: var(--primaria); color: var(--primaria); box-shadow: 0 0 0 4px var(--primaria-clara); }
+.passo-timeline.ativo span, .passo-timeline.concluido span { color: var(--texto); }
+.linha-timeline { flex: 1; height: 2px; background: var(--borda); margin: 0 -6px 20px; }
+.linha-timeline.preenchida { background: var(--primaria); }
+
+/* ---------- Avaliação ---------- */
+.estrelas-selecao { display: flex; gap: 6px; justify-content: center; margin: 14px 0; }
+.estrelas-selecao button { background: none; border: none; font-size: 2rem; color: var(--borda); line-height: 1; padding: 6px; min-width: var(--alvo-toque-min); min-height: var(--alvo-toque-min); }
+.estrelas-selecao button.ativa { color: #f5b301; }
+.estrelas-exibicao { font-size: 1.8rem; color: #f5b301; text-align: center; }
+#comentarioAvaliacao { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--borda); min-height: 70px; resize: vertical; }

@@ -1,0 +1,62 @@
+{% extends "hotelaria/base.html" %}
+{% block titulo %}Chamador de Hotelaria: Histórico de Chamados{% endblock %}
+{% block estilos_extra %}
+<script>
+  window.SERVICOS = {{ servicos|tojson }};
+</script>
+{% endblock %}
+{% block conteudo %}
+<div class="topo">
+  <div class="marca">
+    <img src="{{ url_for('static', filename='img/hotelaria-logo-icon.png') }}" alt="Hospital Rio Grande" class="selo">
+    <div>
+      Chamador de Hotelaria: Histórico de Chamados
+      <span class="subtitulo">Hospital Rio Grande</span>
+    </div>
+  </div>
+  <nav>
+    <a href="{{ url_for('hotelaria_pages.dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('hotelaria_pages.central') }}">Central</a>
+    <a href="{{ url_for('hotelaria_pages.historico') }}" class="ativo">Histórico</a>
+    <a href="{{ url_for('hotelaria_pages.logout') }}" class="botao-sair">Sair</a>
+  </nav>
+</div>
+
+<div class="pagina">
+  <div class="cabecalho-pagina">
+    <h1>Histórico de Chamados</h1>
+    <p>Consulte chamados já finalizados, avaliações e comentários.</p>
+  </div>
+
+  <div class="filtros">
+    <input type="text" id="filtroBusca" placeholder="Buscar por leito ou descrição..." aria-label="Buscar chamados">
+    <select id="filtroServicoHistorico" aria-label="Filtrar por serviço">
+      <option value="todos">Todos os serviços</option>
+      {% for chave, s in servicos.items() %}
+      <option value="{{ chave }}">{{ s.nome }}</option>
+      {% endfor %}
+    </select>
+    <select id="filtroAndar" aria-label="Filtrar por andar">
+      <option value="">Todos os andares</option>
+      {% for andar in andares %}<option value="{{ andar }}">{{ andar }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div class="filtros-ativos" id="filtrosAtivos"></div>
+
+  <div class="lista-historico" id="listaHistorico"></div>
+
+  <div class="paginacao" id="paginacaoHistorico" hidden>
+    <span id="textoPaginacao"></span>
+    <button class="botao botao-fantasma pequeno" id="botaoCarregarMais" type="button">Carregar mais</button>
+  </div>
+</div>
+
+<div class="fundo-modal" id="fundoModal">
+  <div class="modal-chamado" id="modalChamado" role="dialog" aria-modal="true" aria-label="Detalhe do chamado"></div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/hotelaria/historico.js') }}"></script>
+{% endblock %}

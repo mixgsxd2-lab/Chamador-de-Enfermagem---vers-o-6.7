@@ -1,0 +1,115 @@
+{% extends "enfermagem/base.html" %}
+{% block titulo %}Dashboard — Chamador de Enfermagem{% endblock %}
+
+{% block conteudo %}
+<div class="app-admin">
+  <header class="topo-admin">
+    <div class="marca-admin">
+      <img src="{{ url_for('static', filename='img/hotelaria-logo-icon.png') }}" alt="Hospital Rio Grande" class="selo-admin">
+      <div class="titulos-admin">
+        <h1>Dashboard de Enfermagem</h1>
+        <span>Hospital Rio Grande</span>
+      </div>
+    </div>
+    <nav class="nav-admin">
+      <a href="{{ url_for('enfermagem_pages.dashboard') }}" class="ativo">Dashboard</a>
+      <a href="{{ url_for('enfermagem_pages.central') }}">Central</a>
+      <a href="{{ url_for('enfermagem_pages.historico') }}">Histórico</a>
+      <a href="{{ url_for('enfermagem_pages.logout') }}" class="botao-sair">Sair</a>
+    </nav>
+  </header>
+
+  <div class="pagina-admin">
+    <div class="cabecalho-pagina" style="margin-bottom:22px;">
+      <h1 style="font-size:1.5rem;">Visão geral do atendimento</h1>
+      <p style="color:var(--texto-suave); font-size:0.9rem;">Métricas consolidadas dos chamados de enfermagem registrados.</p>
+    </div>
+
+    <div class="painel-filtros-avancados painel-filtros-sempre-visivel">
+      <div class="campo-filtro campo-filtro-busca">
+        <label for="filtroBusca">Buscar</label>
+        <input type="text" id="filtroBusca" placeholder="Leito, categoria, detalhe...">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroStatus">Status</label>
+        <select id="filtroStatus">
+          <option value="">Todos</option>
+          <option value="pendente">Pendentes</option>
+          <option value="em_atendimento">Em atendimento</option>
+          <option value="finalizado">Finalizados</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroPrioridade">Prioridade</label>
+        <select id="filtroPrioridade">
+          <option value="">Todas</option>
+          <option value="critica">🔴 Crítica</option>
+          <option value="alta">🟠 Alta</option>
+          <option value="media">🟡 Média</option>
+          <option value="baixa">🟢 Baixa</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroAndar">Andar</label>
+        <select id="filtroAndar">
+          <option value="">Todos</option>
+          {% for andar in andares %}<option value="{{ andar }}">{{ andar }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroCategoria">Tipo de solicitação</label>
+        <select id="filtroCategoria">
+          <option value="">Todos</option>
+          {% for categoria in categorias %}{% if categoria != "Outros" %}<option value="{{ categoria }}">{{ categoria }}</option>{% endif %}{% endfor %}
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroPeriodo">Período</label>
+        <select id="filtroPeriodo">
+          <option value="">Tudo</option>
+          <option value="hoje">Hoje</option>
+          <option value="7dias">Últimos 7 dias</option>
+          <option value="30dias">Últimos 30 dias</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroDataInicio">De</label>
+        <input type="date" id="filtroDataInicio">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroDataFim">Até</label>
+        <input type="date" id="filtroDataFim">
+      </div>
+      <button class="botao botao-fantasma pequeno" id="botaoLimparFiltrosDash" type="button">Limpar filtros</button>
+    </div>
+
+    <div class="filtros-ativos" id="filtrosAtivos"></div>
+
+    <div class="painel-atencao" id="painelAlertaSla" hidden>
+      <div class="painel-atencao-titulo">⏱ <span id="textoAlertaSla"></span></div>
+    </div>
+
+    <div class="grade-cartoes-dash" id="cartoesResumo"></div>
+
+    <div class="grade-graficos">
+      <div class="painel-grafico">
+        <h3>Chamados por categoria</h3>
+        <div id="graficoCategoria"></div>
+      </div>
+      <div class="painel-grafico">
+        <h3>Chamados por prioridade</h3>
+        <div id="graficoPrioridade"></div>
+      </div>
+    </div>
+
+    <div class="painel-grafico" style="margin-top:16px;">
+      <h3>Chamados por período</h3>
+      <div id="graficoPeriodo"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/enfermagem/dashboard.js') }}"></script>
+{% endblock %}

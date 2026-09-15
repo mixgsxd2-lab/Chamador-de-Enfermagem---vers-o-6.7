@@ -1,0 +1,76 @@
+{% extends "hotelaria/base.html" %}
+{% block titulo %}Chamador de Hotelaria{% endblock %}
+{% block estilos_extra %}
+<script>
+  window.SERVICOS = {{ servicos|tojson }};
+</script>
+{% endblock %}
+{% block conteudo %}
+<div class="topo">
+  <div class="marca">
+    <img src="{{ url_for('static', filename='img/hotelaria-logo-icon.png') }}" alt="Hospital Rio Grande" class="selo">
+    <div>
+      Chamador de Hotelaria
+      <span class="subtitulo">Hospital Rio Grande</span>
+    </div>
+  </div>
+  <nav>
+    <a href="{{ url_for('hotelaria_pages.dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('hotelaria_pages.central') }}" class="ativo">Central</a>
+    <a href="{{ url_for('hotelaria_pages.historico') }}">Histórico</a>
+    <a href="{{ url_for('hotelaria_pages.logout') }}" class="botao-sair">Sair</a>
+  </nav>
+</div>
+
+<div class="pagina">
+  <div class="cabecalho-pagina">
+    <h1>Chamados em tempo real</h1>
+    <p>Acompanhe, assuma e responda às solicitações dos pacientes.</p>
+  </div>
+
+  <div class="filtros">
+    <input type="text" id="filtroBusca" placeholder="Buscar por leito ou descrição..." aria-label="Buscar chamados">
+    <select id="filtroServico" aria-label="Filtrar por serviço">
+      <option value="todos">Todos os serviços</option>
+      {% for chave, s in servicos.items() %}
+      <option value="{{ chave }}">{{ s.nome }}</option>
+      {% endfor %}
+    </select>
+    <select id="filtroAndar" aria-label="Filtrar por andar">
+      <option value="">Todos os andares</option>
+      {% for andar in andares %}<option value="{{ andar }}">{{ andar }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div class="filtros-ativos" id="filtrosAtivos"></div>
+
+  <div class="abas-mobile" id="abasMobile">
+    <button type="button" class="ativo" data-aba="pendente">Pendentes <span class="contagem-aba" id="contagemAbaPendente">0</span></button>
+    <button type="button" data-aba="em_andamento">Andamento <span class="contagem-aba" id="contagemAbaAndamento">0</span></button>
+    <button type="button" data-aba="finalizado">Finalizados <span class="contagem-aba" id="contagemAbaFinalizado">0</span></button>
+  </div>
+
+  <div class="colunas-central">
+    <div class="coluna-central aba-ativa" data-coluna="pendente">
+      <div class="titulo-coluna">Pendentes <span class="contagem-coluna" id="contagemPendente">0</span></div>
+      <div id="colunaPendente"></div>
+    </div>
+    <div class="coluna-central" data-coluna="em_andamento">
+      <div class="titulo-coluna">Em andamento <span class="contagem-coluna" id="contagemAndamento">0</span></div>
+      <div id="colunaAndamento"></div>
+    </div>
+    <div class="coluna-central" data-coluna="finalizado">
+      <div class="titulo-coluna">Finalizados <span class="contagem-coluna" id="contagemFinalizado">0</span></div>
+      <div id="colunaFinalizado"></div>
+    </div>
+  </div>
+</div>
+
+<div class="fundo-modal" id="fundoModal">
+  <div class="modal-chamado" id="modalChamado" role="dialog" aria-modal="true" aria-label="Detalhe do chamado"></div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/hotelaria/central.js') }}"></script>
+{% endblock %}

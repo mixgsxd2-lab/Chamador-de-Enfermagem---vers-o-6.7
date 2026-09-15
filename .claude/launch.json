@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hospital-rio-grande",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["hospital_rio_grande/app.py"],
+      "port": 5000
+    }
+  ]
+}
