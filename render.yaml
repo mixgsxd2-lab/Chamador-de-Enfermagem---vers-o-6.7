@@ -21,12 +21,20 @@ services:
     rootDir: hospital_rio_grande
     plan: free
     buildCommand: pip install -r requirements.txt
+    # "python -m gunicorn" em vez de "gunicorn" puro: o pip instala o
+    # pacote certinho, mas em alguns ambientes do Render o executável
+    # `gunicorn` não fica no PATH do container que roda o start command
+    # ("gunicorn: command not found" mesmo com o build OK). Chamando como
+    # módulo do Python, isso nunca depende do PATH.
+    #
     # 1 worker + várias threads: evita duplicar a tarefa de segundo plano
     # (expiração de confirmações da Hotelaria) e mantém o limitador de
     # tentativas de login (em memória) funcionando corretamente — os dois
     # dependem de um único processo.
-    startCommand: gunicorn app:app --workers 1 --threads 4 --timeout 120
+    startCommand: python -m gunicorn app:app --workers 1 --threads 4 --timeout 120
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
       - key: FLASK_DEBUG
         value: "0"
       - key: SECRET_KEY
