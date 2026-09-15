@@ -5,15 +5,15 @@
 #   2. No Render, clique em "New" -> "Blueprint" e aponte para o repositório.
 #      O Render lê este arquivo e cria o serviço sozinho.
 #
-# IMPORTANTE — banco de dados (SQLite):
-#   O bloco `disk` abaixo cria um disco persistente para o arquivo .db não
-#   ser apagado a cada deploy/reinício. Disco persistente exige um plano
-#   pago (Starter ou superior) — não está disponível no plano Free.
-#   Se for só testar no plano Free, apague o bloco `disk` e a variável
-#   DATABASE_PATH abaixo: o banco volta a ser um arquivo local do próprio
-#   serviço, mas será REINICIADO (perde os chamados) toda vez que o Render
-#   reiniciar ou fizer um novo deploy. Para uso real de um hospital, o
-#   disco persistente (ou um plano com banco gerenciado) é necessário.
+# IMPORTANTE — banco de dados (SQLite) no plano Free:
+#   Sem disco persistente (recurso pago, Starter ou superior), o arquivo
+#   .db vive no sistema de arquivos efêmero do próprio serviço — ou seja,
+#   TODO CHAMADO CRIADO É PERDIDO sempre que o Render reinicia a instância
+#   (acontece com frequência no Free: after um período sem tráfego, a cada
+#   novo deploy, etc.). Adequado só para testar/demonstrar o site, nunca
+#   para uso real de um hospital. Para persistir os dados de verdade,
+#   volte a adicionar um bloco `disk` (montado em, por ex., /var/data) e a
+#   variável DATABASE_PATH apontando para dentro dele — exige plano pago.
 services:
   - type: web
     name: hospital-rio-grande
@@ -41,9 +41,3 @@ services:
         value: enfermagem
       - key: ENFERMAGEM_SENHA
         generateValue: true
-      - key: DATABASE_PATH
-        value: /var/data/hospital_rio_grande.db
-    disk:
-      name: dados-hospital
-      mountPath: /var/data
-      sizeGB: 1
