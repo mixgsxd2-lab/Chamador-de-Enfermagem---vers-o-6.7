@@ -54,8 +54,6 @@
       { rotulo: "Finalizados", valor: d.finalizados },
       { rotulo: "Tempo até ser assumido", valor: formatarMinutos(d.tempo_medio_espera_min) },
       { rotulo: "Tempo de atendimento", valor: formatarMinutos(d.tempo_medio_atendimento_min) },
-      { rotulo: "Avaliação média", valor: d.total_avaliacoes ? `${d.media_avaliacao} ★` : "—" },
-      { rotulo: "Encaminhados pela Enfermagem", valor: d.encaminhados_enfermagem },
     ];
     document.getElementById("cartoesResumo").innerHTML = cartoes.map((c) => `
       <div class="cartao-dash ${c.destaque ? "destaque" : ""}">

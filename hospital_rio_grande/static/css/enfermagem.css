@@ -171,6 +171,7 @@
   font-size: 34px; line-height: 1;
   border: 2px solid rgba(0,0,0,0.06);
 }
+.opcao-dor .rosto-dor svg { width: 28px; height: 28px; }
 .opcao-dor .texto-dor { display: flex; flex-direction: column; gap: 2px; }
 .opcao-dor .texto-dor strong { font-size: 1.1rem; font-weight: 800; }
 .opcao-dor .texto-dor small { font-size: 0.86rem; color: var(--texto-suave); }
@@ -181,6 +182,19 @@
 .opcao-dor.nivel-4 .rosto-dor { background: var(--critica-fundo); color: var(--critica); border-color: var(--critica); }
 .opcao-dor.nivel-4 { border-color: var(--critica); }
 .opcao-dor.nivel-4 .texto-dor small { color: var(--critica); font-weight: 700; }
+
+/* Variante usada pelas demais categorias (Urgência, Soro, Falar com
+   Enfermagem, Outros) — mesma faixa de cor ("grav") do motor de
+   prioridade do backend (ver enfermagem/priority.py::_tier), então a cor
+   mostrada ao paciente nunca diverge da prioridade real do chamado.
+   "Outros" não tem gravidade (encaminhado para a Hotelaria): usa a cor
+   "hotelaria" e ícone de serviço em vez de emoji. */
+.opcao-dor.grav-critica .rosto-dor { background: var(--critica-fundo); color: var(--critica); border-color: var(--critica); }
+.opcao-dor.grav-critica { border-color: var(--critica); }
+.opcao-dor.grav-critica .texto-dor small { color: var(--critica); font-weight: 700; }
+.opcao-dor.grav-media .rosto-dor { background: var(--media-fundo); color: var(--media); }
+.opcao-dor.grav-baixa .rosto-dor { background: var(--baixa-fundo); color: var(--baixa); }
+.opcao-dor.grav-hotelaria .rosto-dor { background: var(--hotelaria-fundo); color: var(--hotelaria); }
 
 /* ==========================================================================
    Passo 2 (categorias) — versão "acessibilidade primeiro":

@@ -34,8 +34,7 @@
       const { dados } = await HRG.fetchJSON("/hotelaria/api/central/resumo");
       document.getElementById("statPendentes").textContent = dados.pendentes;
       document.getElementById("statAndamento").textContent = dados.andamento;
-      document.getElementById("statNaoLidos").textContent = dados.nao_lidos;
-      document.getElementById("statAguardandoConfirmacao").textContent = dados.aguardando_confirmacao;
+      document.getElementById("statSetorTop").textContent = dados.setor_mais_requisitado_hoje || "—";
       document.getElementById("statFinalizadosHoje").textContent = dados.finalizados_hoje;
     } catch (e) {
       // Silencioso: o polling tenta de novo no próximo ciclo.
@@ -164,11 +163,6 @@
       nao_aplicavel: "—",
     }[c.confirmacao_resolucao] || "—";
 
-    const avaliacaoHtml = c.avaliacao
-      ? `<div class="avaliacao-exibicao">${"★".repeat(c.avaliacao.estrelas)}${"☆".repeat(5 - c.avaliacao.estrelas)} <span style="color:var(--texto-suave); font-weight:500;">(${c.avaliacao.estrelas}/5)</span></div>
-         ${c.avaliacao.comentario ? `<p style="font-size:0.85rem; color:var(--texto-suave); margin-top:6px;">"${escapeHtml(c.avaliacao.comentario)}"</p>` : ""}`
-      : `<span style="color:var(--texto-suave); font-size:0.85rem;">Ainda não avaliado</span>`;
-
     const acoes = [];
     if (c.status === "pendente") {
       acoes.push(`<button class="botao" id="botaoAssumir">Assumir chamado</button>`);
@@ -197,11 +191,6 @@
       </div>
 
       <div class="linha-acoes-modal">${acoes.join("")}</div>
-
-      <div class="bloco-info-modal" style="margin-top:14px;">
-        <b>Avaliação do paciente</b><br>
-        ${avaliacaoHtml}
-      </div>
     `;
 
     document.getElementById("botaoFecharModal").addEventListener("click", fecharModal);

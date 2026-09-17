@@ -386,6 +386,11 @@ img, svg { max-width: 100%; }
 .stat-central.acento-critica .valor { color: var(--critica); }
 .stat-central.acento-sucesso .valor { color: var(--sucesso); }
 
+/* Variante para cartões cujo "valor" é um nome (ex.: setor mais
+   requisitado), não um número — precisa de uma fonte menor para não
+   quebrar o layout do cartão com textos mais longos. */
+.stat-central .valor.valor-texto { font-size: 1.15rem; line-height: 1.25; }
+
 /* ==========================================================================
    Dashboard: cartões e gráficos de barra (compartilhado)
    ========================================================================== */

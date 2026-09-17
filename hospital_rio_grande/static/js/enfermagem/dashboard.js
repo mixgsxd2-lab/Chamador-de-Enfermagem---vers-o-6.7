@@ -66,7 +66,6 @@
       { rotulo: "Finalizados", valor: d.finalizados },
       { rotulo: "Tempo médio de espera", valor: formatarMinutos(d.tempo_medio_espera_min) },
       { rotulo: "Tempo médio de atendimento", valor: formatarMinutos(d.tempo_medio_atendimento_min) },
-      { rotulo: "Avaliação média", valor: d.total_avaliacoes ? `${d.avaliacao_media} ★` : "—" },
     ];
     document.getElementById("cartoesResumo").innerHTML = cartoes.map((c) => `
       <div class="cartao-dash ${c.destaque ? "destaque" : ""} ${c.acento ? "acento-critica" : ""}">

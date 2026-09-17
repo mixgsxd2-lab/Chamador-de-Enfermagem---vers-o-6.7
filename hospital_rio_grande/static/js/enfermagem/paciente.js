@@ -10,6 +10,57 @@
   };
   const ICONE_CHECK = '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 
+  // Ícones de serviço usados na subopção "Outros" — mesmo SVG já usado pela
+  // Central de Hotelaria (ver static/js/hotelaria/paciente.js) para a tela
+  // do paciente ficar visualmente consistente com quem vai atender.
+  const ICONES_SERVICO = {
+    bed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>',
+    utensils: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>',
+    shirt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23Z"/></svg>',
+    wrench: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg>',
+    sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M5 5l2.5 2.5M16.5 16.5 19 19M3 12h4M17 12h4M5 19l2.5-2.5M16.5 7.5 19 5"/><circle cx="12" cy="12" r="3"/></svg>',
+  };
+
+  // Emoji/ícone, dica curta e faixa de gravidade de cada subopção — dá às
+  // demais categorias (Urgência, Soro, Falar com Enfermagem, Outros) o
+  // mesmo desenho visual já usado pela escala de Dor (rosto/ícone colorido
+  // + rótulo + dica), em vez da lista de texto simples. A faixa de
+  // gravidade ("critica"/"media"/"baixa") segue os mesmos limiares do motor
+  // de prioridade do backend (ver enfermagem/priority.py::_tier), então a
+  // cor mostrada ao paciente nunca diverge da prioridade real do chamado.
+  // "Outros" não tem gravidade (é encaminhado para a Hotelaria) — usa a cor
+  // "hotelaria" e ícone de serviço em vez de emoji.
+  const OPCOES_VISUAIS = {
+    "Urgência": {
+      "Não consigo respirar bem": { emoji: "😰", dica: "Dificuldade para respirar — chamamos AGORA", grav: "critica" },
+      "Sangramento intenso": { emoji: "🩸", dica: "Sangramento visível — chamamos AGORA", grav: "critica" },
+      "Queda ou acidente no quarto": { emoji: "🤕", dica: "Você caiu ou se machucou — chamamos AGORA", grav: "critica" },
+      "Confusão mental ou desmaio": { emoji: "😵", dica: "Perda de consciência ou confusão — chamamos AGORA", grav: "critica" },
+      "Dor súbita e muito intensa": { emoji: "😖", dica: "Dor forte que começou de repente — chamamos AGORA", grav: "critica" },
+      "Outra emergência": { emoji: "🚨", dica: "Qualquer outra situação grave — chamamos AGORA", grav: "critica" },
+    },
+    "Soro": {
+      "Está retornando sangue": { emoji: "🩸", dica: "Sangue voltando pelo equipo — avise a equipe", grav: "media" },
+      "Problema no acesso": { emoji: "⚠️", dica: "Acesso solto, dolorido ou vazando", grav: "media" },
+      "Acabou": { emoji: "💧", dica: "O soro do frasco já terminou", grav: "media" },
+      "Outro problema": { emoji: "❓", dica: "Qualquer outra dificuldade com o soro", grav: "media" },
+      "Está perto do fim": { emoji: "⏳", dica: "Ainda dá tempo, mas já avise a equipe", grav: "baixa" },
+    },
+    "Falar com Enfermagem": {
+      "Dúvida sobre medicação": { emoji: "💊", dica: "Perguntas sobre remédios", grav: "baixa" },
+      "Dúvida sobre procedimento ou alta": { emoji: "📋", dica: "Perguntas sobre exames, alta ou rotina", grav: "baixa" },
+      "Preciso de orientação": { emoji: "🧭", dica: "Qualquer orientação da equipe", grav: "baixa" },
+      "Assunto geral": { emoji: "💬", dica: "Outro assunto não urgente", grav: "baixa" },
+    },
+    "Outros": {
+      "Acomodação (cama, travesseiro, TV, ar-condicionado)": { icone: "bed", dica: "Poltrona, colchão, TV ou ar-condicionado", grav: "hotelaria" },
+      "Alimentação": { icone: "utensils", dica: "Refeição, lanche ou dieta especial", grav: "hotelaria" },
+      "Roupa de cama / Enxoval": { icone: "shirt", dica: "Lençol, travesseiro ou toalhas", grav: "hotelaria" },
+      "Manutenção do quarto": { icone: "wrench", dica: "Chuveiro, luz ou parte elétrica/hidráulica", grav: "hotelaria" },
+      "Limpeza do quarto ou banheiro": { icone: "sparkles", dica: "Limpeza ou higienização do quarto", grav: "hotelaria" },
+    },
+  };
+
   // Escala de dor: 4 níveis, do mais grave para o mais leve (mesma ordem
   // da lista em enfermagem/constants.py::CATEGORIAS["Dor"]["opcoes"]).
   // Cada nível vira um botão gigante com rosto + cor, para que o paciente
@@ -204,7 +255,25 @@
             </button>
           `;
         }).join("") + `</div>`;
+    } else if (OPCOES_VISUAIS[state.categoria]) {
+      // Mesmo desenho visual da escala de Dor (ícone colorido + rótulo +
+      // dica) para as demais categorias, em vez da lista de texto simples.
+      const visuais = OPCOES_VISUAIS[state.categoria];
+      listaHtml = `<div class="escala-dor surgir">` + dados.opcoes.map((texto) => {
+        const v = visuais[texto] || {};
+        const simbolo = v.icone ? (ICONES_SERVICO[v.icone] || "") : (v.emoji || "•");
+        return `
+          <button type="button" class="opcao-dor grav-${v.grav || "media"}" data-opcao="${escapeHtml(texto)}">
+            <span class="rosto-dor" aria-hidden="true">${simbolo}</span>
+            <span class="texto-dor">
+              <strong>${escapeHtml(texto)}</strong>
+              ${v.dica ? `<small>${escapeHtml(v.dica)}</small>` : ""}
+            </span>
+          </button>
+        `;
+      }).join("") + `</div>`;
     } else {
+      // Reserva: categoria futura sem mapa visual em OPCOES_VISUAIS ainda.
       listaHtml = `<div class="lista-subcategorias surgir">` + dados.opcoes.map((texto) => `
         <button type="button" class="opcao-subcategoria" data-opcao="${escapeHtml(texto)}">
           <span>${escapeHtml(texto)}</span>
@@ -212,6 +281,8 @@
         </button>
       `).join("") + `</div>`;
     }
+
+    const usaEscalaVisual = eDor || Boolean(OPCOES_VISUAIS[state.categoria]);
 
     el.tela.innerHTML = `
       <div class="cabecalho-passo">
@@ -222,7 +293,7 @@
     `;
     el.botaoVoltar.onclick = renderPasso2;
 
-    const seletor = eDor ? ".opcao-dor" : ".opcao-subcategoria";
+    const seletor = usaEscalaVisual ? ".opcao-dor" : ".opcao-subcategoria";
 
     if (envioDireto) {
       // Sem passo de confirmação: a própria escolha da subopção já cria o

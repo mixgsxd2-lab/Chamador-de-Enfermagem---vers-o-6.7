@@ -311,8 +311,7 @@ def api_central_resumo():
     """Contadores em tempo real para os cartões de estatística no topo da
     Central — mesmo papel do `/api/enfermagem/tv` da Enfermagem, mas com
     métricas que fazem sentido para a Hotelaria (que não tem faixas de
-    prioridade/SLA): pendentes, em andamento, mensagens do paciente ainda
-    não lidas, chamados finalizados aguardando confirmação do paciente, e
+    prioridade/SLA): pendentes, em andamento, setor mais requisitado hoje, e
     finalizados hoje."""
     db = get_db()
     ativos = db.execute(
@@ -320,23 +319,27 @@ def api_central_resumo():
     ).fetchall()
     pendentes = sum(1 for c in ativos if c["status"] == STATUS_PENDENTE)
     andamento = sum(1 for c in ativos if c["status"] == STATUS_ANDAMENTO)
-    nao_lidos = sum(1 for c in ativos if _tem_mensagem_nao_lida(c["id"]))
 
     hoje_texto = para_texto(agora().replace(hour=0, minute=0, second=0, microsecond=0))
     finalizados_hoje = db.execute(
         "SELECT COUNT(*) FROM hotelaria_chamados WHERE status = ? AND finalizado_em >= ?",
         (STATUS_FINALIZADO, hoje_texto),
     ).fetchone()[0]
-    aguardando_confirmacao = db.execute(
-        "SELECT COUNT(*) FROM hotelaria_chamados WHERE status = ? AND confirmacao_resolucao = ?",
-        (STATUS_FINALIZADO, CONFIRMACAO_PENDENTE),
-    ).fetchone()[0]
+
+    # "outros" não é um serviço de hotelaria de fato (ver por_servico em
+    # api_dashboard_resumo) — não entra na disputa por "mais requisitado".
+    linha_top = db.execute(
+        """SELECT servico, COUNT(*) as total FROM hotelaria_chamados
+           WHERE criado_em >= ? AND servico != 'outros'
+           GROUP BY servico ORDER BY total DESC LIMIT 1""",
+        (hoje_texto,),
+    ).fetchone()
+    setor_mais_requisitado_hoje = SERVICOS[linha_top["servico"]]["nome"] if linha_top else None
 
     return jsonify({
         "pendentes": pendentes,
         "andamento": andamento,
-        "nao_lidos": nao_lidos,
-        "aguardando_confirmacao": aguardando_confirmacao,
+        "setor_mais_requisitado_hoje": setor_mais_requisitado_hoje,
         "finalizados_hoje": finalizados_hoje,
     })
 
@@ -375,16 +378,29 @@ def api_listar_chamados():
         clausulas.append("(leito LIKE ? OR descricao LIKE ?)")
         params.extend([termo, termo])
 
+    periodo = request.args.get("periodo")
+    if periodo:
+        limite_data = limite_periodo(periodo)
+        if limite_data is not None:
+            clausulas.append("criado_em >= ?")
+            params.append(para_texto(limite_data))
+
     sql = "SELECT * FROM hotelaria_chamados"
     if clausulas:
         sql += " WHERE " + " AND ".join(clausulas)
+
+    # Sem faixas de prioridade/SLA na Hotelaria (ver api_central_resumo) — só
+    # há ordenação por data, ao contrário da Enfermagem (que também ordena
+    # por "prioridade").
+    ordenar = request.args.get("ordenar", "recentes")
+    ordem_sql = "criado_em ASC" if ordenar == "antigos" else "criado_em DESC"
 
     limite = request.args.get("limite", type=int)
     offset = request.args.get("offset", type=int) or 0
     total = db.execute(f"SELECT COUNT(*) FROM ({sql})", params).fetchone()[0]
     limite_sql = limite or LIMITE_SEGURANCA_LISTAGEM
     linhas = db.execute(
-        sql + " ORDER BY criado_em DESC LIMIT ? OFFSET ?", params + [limite_sql, offset]
+        sql + f" ORDER BY {ordem_sql} LIMIT ? OFFSET ?", params + [limite_sql, offset]
     ).fetchall()
 
     resultado = []
@@ -491,6 +507,9 @@ def api_dashboard_resumo():
     # precisos e vêm como `None` quando não há dado (nunca inventados).
     tempo_medio_min = round(sum(tempos_totais) / len(tempos_totais), 1) if tempos_totais else 0
 
+    # Avaliação média não aparece mais no Dashboard, mas o Histórico usa este
+    # mesmo endpoint para seus cartões de estatística (ver
+    # hotelaria/historico.js) e precisa dela.
     ids_filtrados = [c["id"] for c in linhas]
     if ids_filtrados:
         marcadores = ",".join("?" for _ in ids_filtrados)
@@ -501,7 +520,10 @@ def api_dashboard_resumo():
         avaliacoes = []
     media_avaliacao = round(sum(a["estrelas"] for a in avaliacoes) / len(avaliacoes), 2) if avaliacoes else 0
 
-    por_servico = {chave: 0 for chave in SERVICOS}
+    # "outros" não é um serviço de hotelaria de fato — é só a caixa de
+    # entrada de chamados encaminhados pelo Chamador de Enfermagem — então
+    # não entra no gráfico "Chamados por serviço".
+    por_servico = {chave: 0 for chave in SERVICOS if chave != "outros"}
     for c in linhas:
         if c["servico"] in por_servico:
             por_servico[c["servico"]] += 1
@@ -520,8 +542,6 @@ def api_dashboard_resumo():
             por_andar[valor_andar] = por_andar.get(valor_andar, 0) + 1
         else:
             chamados_sem_andar += 1
-
-    encaminhados_enfermagem = sum(1 for c in linhas if c["origem"] == "enfermagem")
 
     # Comparativo com a janela equivalente imediatamente anterior — mesmo
     # racional da Enfermagem (ver enfermagem/api.py::metricas): só calculado
@@ -561,7 +581,6 @@ def api_dashboard_resumo():
         "por_hora": por_hora,
         "por_andar": por_andar,
         "chamados_sem_andar": chamados_sem_andar,
-        "encaminhados_enfermagem": encaminhados_enfermagem,
         "comparativo_periodo_anterior": comparativo,
     })
 

@@ -6,6 +6,10 @@
   const filtroBusca = document.getElementById("filtroBusca");
   const filtroServico = document.getElementById("filtroServicoHistorico");
   const filtroAndar = document.getElementById("filtroAndar");
+  const filtroLeito = document.getElementById("filtroLeito");
+  const filtroPeriodo = document.getElementById("filtroPeriodo");
+  const filtroOrdenar = document.getElementById("filtroOrdenar");
+  const botaoLimparFiltrosHistorico = document.getElementById("botaoLimparFiltrosHistorico");
   const lista = document.getElementById("listaHistorico");
   const fundoModal = document.getElementById("fundoModal");
   const modalChamado = document.getElementById("modalChamado");
@@ -32,8 +36,23 @@
   function filtrosAtuais() {
     const params = new URLSearchParams({ servico: filtroServico.value, status: "finalizado" });
     if (filtroAndar.value) params.set("andar", filtroAndar.value);
+    if (filtroLeito.value.trim()) params.set("leito", filtroLeito.value.trim());
     if (filtroBusca.value.trim()) params.set("q", filtroBusca.value.trim());
+    if (filtroPeriodo.value) params.set("periodo", filtroPeriodo.value);
+    if (filtroOrdenar.value) params.set("ordenar", filtroOrdenar.value);
     return params;
+  }
+
+  async function carregarMetricas() {
+    try {
+      const { dados: m } = await HRG.fetchJSON(`/hotelaria/api/dashboard/resumo?${filtrosAtuais().toString()}`);
+      document.getElementById("mTotal").textContent = m.total;
+      document.getElementById("mTempoEspera").textContent = m.tempo_medio_espera_min != null ? HRG.formatarMinutos(m.tempo_medio_espera_min) : "—";
+      document.getElementById("mTempoAtendimento").textContent = m.tempo_medio_atendimento_min != null ? HRG.formatarMinutos(m.tempo_medio_atendimento_min) : "—";
+      document.getElementById("mAvaliacao").textContent = m.total_avaliacoes ? `${m.media_avaliacao} ★` : "—";
+    } catch (e) {
+      // Os cartões simplesmente mantêm o último valor conhecido.
+    }
   }
 
   async function carregarHistorico(reiniciar) {
@@ -50,7 +69,7 @@
       atualizarPaginacao();
     } catch (e) {
       if (!acumulado.length) {
-        lista.innerHTML = `<div class="vazio-coluna">Não foi possível carregar o histórico. Verifique sua conexão.</div>`;
+        lista.innerHTML = `<div class="estado-vazio">Não foi possível carregar o histórico. Verifique sua conexão.</div>`;
       }
     }
   }
@@ -64,31 +83,38 @@
 
   function renderLista(chamados) {
     if (!chamados.length) {
-      lista.innerHTML = `<div class="vazio-coluna">Nenhum chamado finalizado ainda.</div>`;
+      lista.innerHTML = `
+        <div class="estado-vazio">
+          <span>Nenhum chamado encontrado com estes filtros.</span>
+          <button class="botao botao-fantasma pequeno" id="botaoLimparNoVazio" type="button">Limpar filtros</button>
+        </div>`;
+      const botao = document.getElementById("botaoLimparNoVazio");
+      if (botao) botao.addEventListener("click", limparFiltros);
       return;
     }
     lista.innerHTML = chamados.map(cartaoHistoricoHtml).join("");
-    lista.querySelectorAll(".cartao-chamado").forEach((elCard) => {
+    lista.querySelectorAll(".cartao-chamado-admin").forEach((elCard) => {
       elCard.addEventListener("click", () => abrirModal(parseInt(elCard.dataset.id, 10)));
     });
   }
 
+  // Mesma estrutura/classes do cartão de Histórico da Enfermagem (ver
+  // enfermagem/historico.js::cartaoHtml) — Hotelaria não tem faixa de
+  // prioridade, então o selo de serviço ocupa o lugar do selo de
+  // prioridade, e a borda usa sempre o acento "baixa" (verde), já que aqui
+  // só existem chamados finalizados.
   function cartaoHistoricoHtml(c) {
-    const avaliacaoResumo = c.tem_avaliacao ? "Avaliado" : "Sem avaliação";
     return `
-      <button type="button" class="cartao-chamado finalizado surgir" data-id="${c.id}">
-        <div class="linha-cartao-topo">
-          <div class="local-cartao">
-            ${c.andar ? `<span class="local-andar">${escapeHtml(c.andar)}</span>` : ""}
-            <span class="local-leito">Leito ${escapeHtml(c.leito)}</span>
-          </div>
+      <button type="button" class="cartao-chamado-admin borda-baixa surgir" data-id="${c.id}">
+        <div class="linha-cartao-admin">
+          <span class="leito-etiqueta-admin">Leito ${escapeHtml(c.leito)}</span>
           <span class="servico-etiqueta">${escapeHtml(c.servico_nome)}</span>
         </div>
-        <p class="descricao-cartao">${escapeHtml(c.descricao_exibicao || c.descricao)}</p>
-        <div class="rodape-cartao">
-          Aberto às ${c.criado_em}${c.finalizado_em ? ` · Finalizado às ${c.finalizado_em}` : ""}
-          ${c.tempo_atendimento_min != null ? ` · ${c.tempo_atendimento_min} min` : ""}
-          · ${avaliacaoResumo}
+        <div class="categoria-cartao-admin">${escapeHtml(c.descricao_exibicao || c.descricao)}</div>
+        <div class="rodape-cartao-admin">
+          <span class="selo-status selo-status-finalizado">Finalizado</span>
+          <span>${c.criado_em}</span>
+          ${c.tempo_atendimento_min != null ? `<span>${HRG.formatarMinutos(c.tempo_atendimento_min)} de atendimento</span>` : ""}
         </div>
       </button>
     `;
@@ -157,32 +183,53 @@
   fundoModal.addEventListener("click", (e) => { if (e.target === fundoModal) fecharModal(); });
   HRG.fecharComEsc(() => fundoModal.classList.contains("aberto"), fecharModal);
 
+  function recarregarTudo() {
+    carregarMetricas();
+    carregarHistorico(true);
+  }
+
   // ---------------------------------------------------------------------
   // Filtros ativos
   // ---------------------------------------------------------------------
+  function limparFiltros() {
+    filtroBusca.value = ""; filtroServico.value = "todos"; filtroAndar.value = "";
+    filtroLeito.value = ""; filtroPeriodo.value = ""; filtroOrdenar.value = "recentes";
+    renderFiltrosAtivos();
+    recarregarTudo();
+  }
+
   function renderFiltrosAtivos() {
-    const ativos = [];
-    if (filtroBusca.value.trim()) ativos.push({ chave: "busca", texto: `Busca: "${filtroBusca.value.trim()}"` });
-    if (filtroAndar.value) ativos.push({ chave: "andar", texto: `Andar: ${filtroAndar.value}` });
+    const definicoes = [
+      { chave: "q", el: filtroBusca, rotulo: (v) => `Busca: "${v}"` },
+      { chave: "servico", el: filtroServico, ignorar: "todos", rotulo: () => `Serviço: ${filtroServico.selectedOptions[0].textContent}` },
+      { chave: "andar", el: filtroAndar, rotulo: (v) => `Andar: ${v}` },
+      { chave: "leito", el: filtroLeito, rotulo: (v) => `Leito: ${v}` },
+      { chave: "periodo", el: filtroPeriodo, rotulo: () => filtroPeriodo.selectedOptions[0].textContent },
+    ];
+    const ativos = definicoes.filter((d) => d.el.value && d.el.value !== d.ignorar);
     if (!ativos.length) { filtrosAtivosEl.innerHTML = ""; return; }
-    filtrosAtivosEl.innerHTML = ativos.map((a) => `
-      <span class="filtro-ativo-chip" data-chave="${a.chave}">${escapeHtml(a.texto)}<button type="button" aria-label="Remover filtro">✕</button></span>
+    filtrosAtivosEl.innerHTML = ativos.map((d) => `
+      <span class="filtro-ativo-chip" data-chave="${d.chave}">${escapeHtml(d.rotulo(d.el.value))}<button type="button" aria-label="Remover filtro">✕</button></span>
     `).join("");
     filtrosAtivosEl.querySelectorAll(".filtro-ativo-chip button").forEach((botao) => {
       botao.addEventListener("click", () => {
         const chave = botao.parentElement.dataset.chave;
-        if (chave === "busca") filtroBusca.value = "";
-        if (chave === "andar") filtroAndar.value = "";
+        const def = definicoes.find((d) => d.chave === chave);
+        if (def) def.el.value = def.ignorar || "";
         renderFiltrosAtivos();
-        carregarHistorico(true);
+        recarregarTudo();
       });
     });
   }
 
-  filtroServico.addEventListener("change", () => carregarHistorico(true));
-  filtroAndar.addEventListener("change", () => { renderFiltrosAtivos(); carregarHistorico(true); });
-  filtroBusca.addEventListener("input", HRG.debounce(() => { renderFiltrosAtivos(); carregarHistorico(true); }, 350));
+  [filtroServico, filtroAndar, filtroPeriodo, filtroOrdenar].forEach((sel) => {
+    sel.addEventListener("change", () => { renderFiltrosAtivos(); recarregarTudo(); });
+  });
+  filtroLeito.addEventListener("input", HRG.debounce(() => { renderFiltrosAtivos(); recarregarTudo(); }, 350));
+  filtroBusca.addEventListener("input", HRG.debounce(() => { renderFiltrosAtivos(); recarregarTudo(); }, 350));
+  botaoLimparFiltrosHistorico.addEventListener("click", limparFiltros);
   botaoCarregarMais.addEventListener("click", () => carregarHistorico(false));
 
-  carregarHistorico(true);
+  filtroOrdenar.value = "recentes";
+  recarregarTudo();
 })();

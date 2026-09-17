@@ -23,6 +23,13 @@
 </div>
 
 <div class="pagina">
+  <div class="grade-stats-central" id="gradeMetricas">
+    <div class="stat-central"><span class="valor" id="mTotal">0</span><span class="rotulo">Total de chamados</span></div>
+    <div class="stat-central"><span class="valor" id="mTempoEspera">-</span><span class="rotulo">Tempo médio de espera</span></div>
+    <div class="stat-central"><span class="valor" id="mTempoAtendimento">-</span><span class="rotulo">Tempo médio de atendimento</span></div>
+    <div class="stat-central"><span class="valor" id="mAvaliacao">-</span><span class="rotulo">Avaliação média</span></div>
+  </div>
+
   <div class="barra-filtros barra-filtros-central">
     <button class="botao-filtros-avancados" id="botaoFiltrosAvancados" type="button" aria-expanded="false" aria-controls="painelFiltrosAvancados">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
@@ -52,7 +59,28 @@
           {% for andar in andares %}<option value="{{ andar }}">{{ andar }}</option>{% endfor %}
         </select>
       </div>
+      <div class="campo-filtro">
+        <label for="filtroLeito">Leito</label>
+        <input type="text" id="filtroLeito" placeholder="Ex.: 205" aria-label="Filtrar por leito">
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroPeriodo">Período</label>
+        <select id="filtroPeriodo" aria-label="Filtrar por período">
+          <option value="">Tudo</option>
+          <option value="hoje">Hoje</option>
+          <option value="7dias">Últimos 7 dias</option>
+          <option value="30dias">Últimos 30 dias</option>
+        </select>
+      </div>
+      <div class="campo-filtro">
+        <label for="filtroOrdenar">Ordenar por</label>
+        <select id="filtroOrdenar" aria-label="Ordenar por">
+          <option value="recentes">Mais recentes</option>
+          <option value="antigos">Mais antigos</option>
+        </select>
+      </div>
     </div>
+    <button class="botao botao-fantasma pequeno" id="botaoLimparFiltrosHistorico" type="button">Limpar filtros</button>
   </div>
 
   <div class="filtros-ativos" id="filtrosAtivos"></div>
