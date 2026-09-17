@@ -51,12 +51,14 @@ CATEGORIAS = {
     "Dor": {
         "chave": "dor",
         "icone": "dor",
-        "cor": "alta",
-        "descricao": "Conte para a gente o quanto está sentindo.",
+        "cor": "critica",
+        "descricao": "Toque no rosto que mostra como você está se sentindo.",
+        # A ordem aqui vai do MAIS grave para o MENOS grave — a UI do paciente
+        # renderiza uma escala visual (rostos + cores) usando essa mesma ordem
+        # e o campo `gravidade` para escolher o ícone/cor de cada opção.
         "opcoes": [
             ("Dor no peito", 88),
-            ("Dor intensa", 70),
-            ("Dor pós-operatória", 55),
+            ("Dor muito forte", 70),
             ("Dor moderada", 45),
             ("Dor leve", 25),
         ],
@@ -151,18 +153,16 @@ STATUS_LABELS = {
     STATUS_FINALIZADO: "Finalizado",
 }
 
-PRIORIDADES = ["critica", "alta", "media", "baixa"]
+PRIORIDADES = ["critica", "media", "baixa"]
 
 PRIORIDADE_LABELS = {
-    "critica": "Crítica",
-    "alta": "Alta",
-    "media": "Média",
-    "baixa": "Baixa",
+    "critica": "Crítico",
+    "media": "Médio",
+    "baixa": "Baixo",
 }
 
 PRIORIDADE_EMOJI = {
     "critica": "🔴",
-    "alta": "🟠",
     "media": "🟡",
     "baixa": "🟢",
 }

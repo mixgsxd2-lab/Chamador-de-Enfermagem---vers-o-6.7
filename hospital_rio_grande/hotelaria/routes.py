@@ -305,6 +305,42 @@ def api_criar_avaliacao(chamado_id):
 # ---------------------------------------------------------------------------
 # API - Central
 # ---------------------------------------------------------------------------
+@hotelaria_api.route("/central/resumo", methods=["GET"])
+@login_requerido
+def api_central_resumo():
+    """Contadores em tempo real para os cartões de estatística no topo da
+    Central — mesmo papel do `/api/enfermagem/tv` da Enfermagem, mas com
+    métricas que fazem sentido para a Hotelaria (que não tem faixas de
+    prioridade/SLA): pendentes, em andamento, mensagens do paciente ainda
+    não lidas, chamados finalizados aguardando confirmação do paciente, e
+    finalizados hoje."""
+    db = get_db()
+    ativos = db.execute(
+        f"SELECT * FROM hotelaria_chamados WHERE status IN ('{STATUS_PENDENTE}', '{STATUS_ANDAMENTO}')"
+    ).fetchall()
+    pendentes = sum(1 for c in ativos if c["status"] == STATUS_PENDENTE)
+    andamento = sum(1 for c in ativos if c["status"] == STATUS_ANDAMENTO)
+    nao_lidos = sum(1 for c in ativos if _tem_mensagem_nao_lida(c["id"]))
+
+    hoje_texto = para_texto(agora().replace(hour=0, minute=0, second=0, microsecond=0))
+    finalizados_hoje = db.execute(
+        "SELECT COUNT(*) FROM hotelaria_chamados WHERE status = ? AND finalizado_em >= ?",
+        (STATUS_FINALIZADO, hoje_texto),
+    ).fetchone()[0]
+    aguardando_confirmacao = db.execute(
+        "SELECT COUNT(*) FROM hotelaria_chamados WHERE status = ? AND confirmacao_resolucao = ?",
+        (STATUS_FINALIZADO, CONFIRMACAO_PENDENTE),
+    ).fetchone()[0]
+
+    return jsonify({
+        "pendentes": pendentes,
+        "andamento": andamento,
+        "nao_lidos": nao_lidos,
+        "aguardando_confirmacao": aguardando_confirmacao,
+        "finalizados_hoje": finalizados_hoje,
+    })
+
+
 @hotelaria_api.route("/central/chamados", methods=["GET"])
 @login_requerido
 def api_listar_chamados():
@@ -324,6 +360,10 @@ def api_listar_chamados():
     if status and status != "todos":
         clausulas.append("status = ?")
         params.append(status)
+    elif request.args.get("status_ativos"):
+        # Central: pede apenas quem ainda precisa de ação. Finalizados ficam
+        # só no Histórico. Ignorado quando `status` explícito foi passado.
+        clausulas.append(f"status IN ('{STATUS_PENDENTE}', '{STATUS_ANDAMENTO}')")
     if andar:
         clausulas.append("andar = ?")
         params.append(andar)

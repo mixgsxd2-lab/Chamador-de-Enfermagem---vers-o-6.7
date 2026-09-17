@@ -41,9 +41,15 @@
   background: linear-gradient(to top, var(--fundo) 60%, rgba(244,246,251,0));
 }
 
-.cabecalho-passo { margin-bottom: 18px; }
-.cabecalho-passo h1 { font-size: 1.45rem; font-weight: 800; margin-bottom: 4px; }
-.cabecalho-passo p { color: var(--texto-suave); font-size: 0.95rem; }
+.cabecalho-passo { margin-bottom: 20px; }
+.cabecalho-passo h1 { font-size: 1.65rem; font-weight: 800; margin-bottom: 6px; line-height: 1.15; }
+.cabecalho-passo p { color: var(--texto-suave); font-size: 1rem; line-height: 1.35; }
+
+/* Paciente: botão principal (Continuar / Enviar) grande e confortável para
+   um toque com o dedão, sem elementos vizinhos disputando o clique. */
+.app-paciente .barra-inferior-paciente .botao {
+  min-height: 56px; font-size: 1.05rem; border-radius: 14px;
+}
 
 .cartao-passo { background: var(--branco); border-radius: var(--raio); padding: 22px; box-shadow: var(--sombra); }
 
@@ -90,19 +96,19 @@
 .cor-hotelaria .icone-categoria { background: var(--hotelaria-fundo); color: var(--hotelaria); }
 .cor-hotelaria { border-left: 4px solid var(--hotelaria); }
 
-/* ---------- Passo 3: subopções ---------- */
-.lista-subcategorias { display: flex; flex-direction: column; gap: 10px; }
+/* ---------- Passo 3: subopções — grandes, com espaço generoso ---------- */
+.lista-subcategorias { display: flex; flex-direction: column; gap: 12px; }
 .opcao-subcategoria {
   display: flex; align-items: center; justify-content: space-between;
-  background: var(--branco); border: 1.5px solid var(--borda); border-radius: 14px;
-  padding: 16px 16px; text-align: left; font-size: 0.98rem; font-weight: 600;
-  min-height: var(--alvo-toque-min); width: 100%;
+  background: var(--branco); border: 2px solid var(--borda); border-radius: 16px;
+  padding: 20px 20px; text-align: left; font-size: 1.08rem; font-weight: 700;
+  min-height: 64px; width: 100%;
 }
 .opcao-subcategoria .marcador-opcao {
-  width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--borda); flex-shrink: 0;
+  width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid var(--borda); flex-shrink: 0;
 }
 .opcao-subcategoria.selecionada { border-color: var(--primaria); background: var(--primaria-clara); }
-.opcao-subcategoria.selecionada .marcador-opcao { border-color: var(--primaria); background: var(--primaria); box-shadow: inset 0 0 0 3px #fff; }
+.opcao-subcategoria.selecionada .marcador-opcao { border-color: var(--primaria); background: var(--primaria); box-shadow: inset 0 0 0 4px #fff; }
 .opcao-subcategoria:disabled { opacity: 0.7; }
 
 /* ---------- Confirmação ---------- */
@@ -142,3 +148,58 @@
 .estrelas-selecao button.ativa { color: #f5b301; }
 .estrelas-exibicao { font-size: 1.8rem; color: #f5b301; text-align: center; }
 #comentarioAvaliacao { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--borda); min-height: 70px; resize: vertical; }
+
+/* ==========================================================================
+   Escala de dor (Passo 3, categoria "Dor") — grande, colorida e com rostos
+   para que o paciente possa escolher pela expressão facial, sem depender de
+   leitura. Nível 4 (dor no peito) sempre destacado como alerta clínico.
+   ========================================================================== */
+.escala-dor {
+  display: flex; flex-direction: column; gap: 12px; margin-top: 6px;
+}
+.opcao-dor {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--branco); border: 2px solid var(--borda); border-radius: 18px;
+  padding: 16px 18px; text-align: left; width: 100%; min-height: 72px;
+  transition: transform .12s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.opcao-dor:hover { transform: translateY(-1px); box-shadow: var(--sombra-media); }
+.opcao-dor.selecionada { border-color: var(--primaria); background: var(--primaria-clara); }
+.opcao-dor .rosto-dor {
+  flex-shrink: 0; width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; line-height: 1;
+  border: 2px solid rgba(0,0,0,0.06);
+}
+.opcao-dor .texto-dor { display: flex; flex-direction: column; gap: 2px; }
+.opcao-dor .texto-dor strong { font-size: 1.1rem; font-weight: 800; }
+.opcao-dor .texto-dor small { font-size: 0.86rem; color: var(--texto-suave); }
+
+.opcao-dor.nivel-1 .rosto-dor { background: #e3f7ee; color: #1f7a53; }
+.opcao-dor.nivel-2 .rosto-dor { background: #fef7d6; color: #8b6b0f; }
+.opcao-dor.nivel-3 .rosto-dor { background: #ffe1cf; color: #a24012; }
+.opcao-dor.nivel-4 .rosto-dor { background: var(--critica-fundo); color: var(--critica); border-color: var(--critica); }
+.opcao-dor.nivel-4 { border-color: var(--critica); }
+.opcao-dor.nivel-4 .texto-dor small { color: var(--critica); font-weight: 700; }
+
+/* ==========================================================================
+   Passo 2 (categorias) — versão "acessibilidade primeiro":
+   ícones maiores, blocos mais altos, contraste alto.
+   ========================================================================== */
+.cartao-categoria { padding: 22px 20px; min-height: 96px; gap: 18px; }
+.cartao-categoria .icone-categoria { width: 64px; height: 64px; border-radius: 18px; }
+.cartao-categoria .icone-categoria svg { width: 34px; height: 34px; }
+.cartao-categoria .texto-categoria strong { font-size: 1.2rem; }
+.cartao-categoria .texto-categoria small { font-size: 0.9rem; }
+
+/* ==========================================================================
+   Botão "Sair sem avaliar" (bem visível, cor neutra e alvo grande)
+   ========================================================================== */
+.botao-sair-sem-avaliar {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: var(--alvo-toque-min); margin-top: 12px;
+  padding: 12px 20px; border-radius: 12px; border: none;
+  background: transparent; color: var(--texto-suave);
+  font-weight: 700; font-size: 0.92rem; text-decoration: underline;
+}
+.botao-sair-sem-avaliar:hover { color: var(--texto); }

@@ -11,6 +11,16 @@
   const filtroAndar = document.getElementById("filtroAndar");
   const filtroPeriodo = document.getElementById("filtroPeriodo");
   const filtrosAtivosEl = document.getElementById("filtrosAtivos");
+  const botaoFiltrosAvancados = document.getElementById("botaoFiltrosAvancados");
+  const painelFiltrosAvancados = document.getElementById("painelFiltrosAvancados");
+
+  if (botaoFiltrosAvancados && painelFiltrosAvancados) {
+    botaoFiltrosAvancados.addEventListener("click", () => {
+      const abrir = painelFiltrosAvancados.hidden;
+      painelFiltrosAvancados.hidden = !abrir;
+      botaoFiltrosAvancados.setAttribute("aria-expanded", String(abrir));
+    });
+  }
 
   function tendenciaHtml(comparativo) {
     if (!comparativo) return "";
@@ -42,7 +52,6 @@
       { rotulo: "Pendentes", valor: d.pendentes },
       { rotulo: "Em andamento", valor: d.andamento },
       { rotulo: "Finalizados", valor: d.finalizados },
-      { rotulo: "Taxa de finalização", valor: d.taxa_finalizacao != null ? `${d.taxa_finalizacao}%` : "—" },
       { rotulo: "Tempo até ser assumido", valor: formatarMinutos(d.tempo_medio_espera_min) },
       { rotulo: "Tempo de atendimento", valor: formatarMinutos(d.tempo_medio_atendimento_min) },
       { rotulo: "Avaliação média", valor: d.total_avaliacoes ? `${d.media_avaliacao} ★` : "—" },

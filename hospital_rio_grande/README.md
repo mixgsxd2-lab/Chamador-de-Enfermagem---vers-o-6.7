@@ -90,26 +90,18 @@ simultaneamente sem duplicar ou perder chamados foi resolvido com:
 ## Algoritmo de prioridade
 
 A fila de atendimento **não é ordenada apenas por horário**. Cada
-chamado recebe uma pontuação (`enfermagem/priority.py`), recalculada a
-cada consulta (nunca é gravada "congelada" no banco, sempre reflete o
-tempo de espera atual):
+chamado recebe uma pontuação (`enfermagem/priority.py`), igual à
+**gravidade base** (0–100) da subopção escolhida pelo paciente — ex.:
+"Não consigo respirar bem" = 100, "Dor leve" = 25 — e mapeada em 3
+níveis: 🔴 **Crítico** (gravidade ≥ 85), 🟡 **Médio** (≥ 40),
+🟢 **Baixo** (abaixo disso). A fila do painel de enfermagem e da TV é
+sempre ordenada por esses níveis (e, dentro do mesmo nível, pela
+pontuação exata), não pela ordem de chegada.
 
-- **Gravidade base** (0–100): definida pela subopção escolhida pelo
-  paciente. Ex.: "Não consigo respirar bem" = 100, "Dor leve" = 25.
-- **Bônus por tempo de espera**: +1,5 ponto por minuto aguardando, até um
-  teto de 60 pontos — garante que chamados de menor gravidade não fiquem
-  esquecidos indefinidamente na fila.
-- **Bônus por reincidência**: chamados repetidos do mesmo leito em uma
-  janela de 3 horas somam pontos extras (até 36) — sinaliza um paciente
-  que está chamando várias vezes e ainda não foi atendido adequadamente.
-- **Bônus por chamado logo após atendimento**: se o leito chama de novo
-  nos 20 minutos seguintes a um atendimento, ganha bônus adicional (25
-  pontos) — pode indicar que o problema não foi resolvido.
-
-A pontuação final é mapeada em 4 níveis: 🔴 **Crítica** (≥90),
-🟠 **Alta** (≥65), 🟡 **Média** (≥40), 🟢 **Baixa** (abaixo disso). A fila
-do painel de enfermagem e da TV é sempre ordenada por esses níveis (e,
-dentro do mesmo nível, pela pontuação exata), não pela ordem de chegada.
+Cada nível também tem uma meta de tempo de espera (SLA) até o início do
+atendimento — Crítico: 15 min, Médio: 40 min, Baixo: 90 min — usada para
+sinalizar chamados "acima do tempo esperado" nos dashboards e na Central,
+mas que não altera o nível de criticidade do chamado.
 
 ## Encaminhamento "Outros" → Hotelaria
 
@@ -236,8 +228,7 @@ requisições HTTP reais (não apenas leitura de código):
 
 - Criação de chamado em cada uma das 4 categorias clínicas e
   encaminhamento correto da categoria "Outros" para a Hotelaria.
-- Cálculo e ordenação de prioridade (inclusive com chamados
-  reincidentes e chamados pós-atendimento recente).
+- Cálculo e ordenação de prioridade por gravidade base.
 - Fluxo completo `pendente → em_atendimento → finalizado`, com bloqueio
   de ações após finalização.
 - Concorrência: 60 criações simultâneas (30 threads) e disputa de

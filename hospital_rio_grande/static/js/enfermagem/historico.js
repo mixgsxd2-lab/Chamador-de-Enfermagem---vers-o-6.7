@@ -13,7 +13,6 @@
   const botaoCarregarMais = document.getElementById("botaoCarregarMais");
 
   const filtroBusca = document.getElementById("filtroBusca");
-  const filtroStatus = document.getElementById("filtroStatus");
   const filtroPrioridade = document.getElementById("filtroPrioridade");
   const filtroAndar = document.getElementById("filtroAndar");
   const filtroLeito = document.getElementById("filtroLeito");
@@ -21,15 +20,24 @@
   const filtroPeriodo = document.getElementById("filtroPeriodo");
   const filtroOrdenar = document.getElementById("filtroOrdenar");
   const botaoLimparFiltrosHistorico = document.getElementById("botaoLimparFiltrosHistorico");
+  const botaoFiltrosAvancados = document.getElementById("botaoFiltrosAvancados");
+  const painelFiltrosAvancados = document.getElementById("painelFiltrosAvancados");
+
+  if (botaoFiltrosAvancados && painelFiltrosAvancados) {
+    botaoFiltrosAvancados.addEventListener("click", () => {
+      const abrir = painelFiltrosAvancados.hidden;
+      painelFiltrosAvancados.hidden = !abrir;
+      botaoFiltrosAvancados.setAttribute("aria-expanded", String(abrir));
+    });
+  }
 
   const TAMANHO_PAGINA = 30;
   let acumulado = [];
   let totalConhecido = 0;
 
   function filtrosAtuais() {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ status: "finalizado" });
     if (filtroBusca.value.trim()) params.set("q", filtroBusca.value.trim());
-    if (filtroStatus.value) params.set("status", filtroStatus.value);
     if (filtroPrioridade.value) params.set("prioridade", filtroPrioridade.value);
     if (filtroAndar.value) params.set("andar", filtroAndar.value);
     if (filtroLeito.value.trim()) params.set("leito", filtroLeito.value.trim());
@@ -157,7 +165,7 @@
   // Filtros ativos
   // ---------------------------------------------------------------------
   function limparFiltros() {
-    filtroBusca.value = ""; filtroStatus.value = ""; filtroPrioridade.value = "";
+    filtroBusca.value = ""; filtroPrioridade.value = "";
     filtroAndar.value = ""; filtroLeito.value = ""; filtroCategoria.value = "";
     filtroPeriodo.value = ""; filtroOrdenar.value = "recentes";
     renderFiltrosAtivos();
@@ -167,7 +175,6 @@
   function renderFiltrosAtivos() {
     const definicoes = [
       { chave: "q", el: filtroBusca, rotulo: (v) => `Busca: "${v}"` },
-      { chave: "status", el: filtroStatus, rotulo: (v) => `Status: ${filtroStatus.selectedOptions[0].textContent}` },
       { chave: "prioridade", el: filtroPrioridade, rotulo: (v) => `Prioridade: ${filtroPrioridade.selectedOptions[0].textContent}` },
       { chave: "andar", el: filtroAndar, rotulo: (v) => `Andar: ${v}` },
       { chave: "leito", el: filtroLeito, rotulo: (v) => `Leito: ${v}` },
@@ -190,7 +197,7 @@
     });
   }
 
-  [filtroStatus, filtroPrioridade, filtroAndar, filtroCategoria, filtroPeriodo, filtroOrdenar].forEach((sel) => {
+  [filtroPrioridade, filtroAndar, filtroCategoria, filtroPeriodo, filtroOrdenar].forEach((sel) => {
     sel.addEventListener("change", () => { renderFiltrosAtivos(); recarregarTudo(); });
   });
   filtroLeito.addEventListener("input", HRG.debounce(() => { renderFiltrosAtivos(); recarregarTudo(); }, 350));

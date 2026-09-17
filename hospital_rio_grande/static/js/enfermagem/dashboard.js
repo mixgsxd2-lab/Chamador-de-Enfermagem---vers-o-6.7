@@ -4,9 +4,11 @@
   const escapeHtml = HRG.escapeHtml;
   const formatarMinutos = HRG.formatarMinutos;
 
-  // Mesmas cores já usadas nos selos de prioridade (ver static/css/base.css).
-  const CORES_PRIORIDADE = { critica: "#b3261e", alta: "#96660c", media: "#52606d", baixa: "#1f7a53" };
-  const ROTULOS_PRIORIDADE = { critica: "Crítica", alta: "Alta", media: "Média", baixa: "Baixa" };
+  // Mesmas cores/rótulos já usados nos selos de prioridade (ver
+  // static/css/base.css e enfermagem/constants.py::PRIORIDADE_LABELS) — só 3
+  // faixas: Crítico, Médio, Baixo.
+  const CORES_PRIORIDADE = { critica: "#b3261e", media: "#52606d", baixa: "#1f7a53" };
+  const ROTULOS_PRIORIDADE = { critica: "Crítico", media: "Médio", baixa: "Baixo" };
 
   const filtros = {};
   const filtroBusca = document.getElementById("filtroBusca");
@@ -19,8 +21,16 @@
   const filtroDataFim = document.getElementById("filtroDataFim");
   const botaoLimparFiltrosDash = document.getElementById("botaoLimparFiltrosDash");
   const filtrosAtivosEl = document.getElementById("filtrosAtivos");
-  const painelAlertaSla = document.getElementById("painelAlertaSla");
-  const textoAlertaSla = document.getElementById("textoAlertaSla");
+  const botaoFiltrosAvancados = document.getElementById("botaoFiltrosAvancados");
+  const painelFiltrosAvancados = document.getElementById("painelFiltrosAvancados");
+
+  if (botaoFiltrosAvancados && painelFiltrosAvancados) {
+    botaoFiltrosAvancados.addEventListener("click", () => {
+      const abrir = painelFiltrosAvancados.hidden;
+      painelFiltrosAvancados.hidden = !abrir;
+      botaoFiltrosAvancados.setAttribute("aria-expanded", String(abrir));
+    });
+  }
 
   const TODOS_OS_CAMPOS = [filtroBusca, filtroStatus, filtroPrioridade, filtroAndar, filtroCategoria, filtroPeriodo, filtroDataInicio, filtroDataFim];
 
@@ -40,7 +50,6 @@
     try {
       const { dados } = await HRG.fetchJSON(`/api/enfermagem/metricas?${params.toString()}`);
       renderCartoes(dados);
-      renderAlertaSla(dados);
       renderGraficoCategoria(dados.por_categoria);
       renderGraficoPrioridade(dados.por_prioridade);
       renderGraficoPeriodo(dados.por_dia);
@@ -49,30 +58,12 @@
     }
   }
 
-  function renderAlertaSla(d) {
-    if (!d.mais_antigo_pendente && !d.acima_do_tempo_esperado) {
-      painelAlertaSla.hidden = true;
-      return;
-    }
-    const partes = [];
-    if (d.acima_do_tempo_esperado) {
-      partes.push(`${d.acima_do_tempo_esperado} chamado${d.acima_do_tempo_esperado > 1 ? "s" : ""} acima do tempo esperado`);
-    }
-    if (d.mais_antigo_pendente) {
-      partes.push(`o mais antigo pendente é o leito ${d.mais_antigo_pendente.leito} (aguardando há ${formatarMinutos(d.mais_antigo_pendente.tempo_espera_min)})`);
-    }
-    if (!partes.length) { painelAlertaSla.hidden = true; return; }
-    painelAlertaSla.hidden = false;
-    textoAlertaSla.textContent = partes.join(" · ");
-  }
-
   function renderCartoes(d) {
     const cartoes = [
       { rotulo: "Total de chamados", valor: d.total, destaque: true, extra: tendenciaHtml(d.comparativo_periodo_anterior) },
       { rotulo: "Pendentes", valor: d.pendentes },
       { rotulo: "Em atendimento", valor: d.em_atendimento },
       { rotulo: "Finalizados", valor: d.finalizados },
-      { rotulo: "Taxa de finalização", valor: d.taxa_finalizacao != null ? `${d.taxa_finalizacao}%` : "—" },
       { rotulo: "Tempo médio de espera", valor: formatarMinutos(d.tempo_medio_espera_min) },
       { rotulo: "Tempo médio de atendimento", valor: formatarMinutos(d.tempo_medio_atendimento_min) },
       { rotulo: "Avaliação média", valor: d.total_avaliacoes ? `${d.avaliacao_media} ★` : "—" },

@@ -89,7 +89,7 @@ h1, h2, h3 { margin: 0; }
 p { margin: 0; }
 img, svg { max-width: 100%; }
 
-/* Vários componentes abaixo (banner-status, painel-atencao, etc.) definem
+/* Vários componentes abaixo (banner-status, painel-filtros-avancados, etc.) definem
    `display: flex`/`grid` na própria classe. Sem esta regra, esse `display`
    declarado pelo autor empataria em especificidade com o `[hidden]` da
    folha de estilos do navegador e, por vir depois na cascata, VENCERIA —
@@ -240,6 +240,10 @@ img, svg { max-width: 100%; }
 .borda-alta { border-left: 5px solid var(--alta); }
 .borda-media { border-left: 5px solid var(--media); }
 .borda-baixa { border-left: 5px solid var(--baixa); }
+/* Usada pela Central de Hotelaria (não tem faixas de prioridade como a
+   Enfermagem — só status): mesmo acento visual de borda, cor de "em
+   andamento" (ver .selo-status-em_andamento acima). */
+.borda-andamento { border-left: 5px solid var(--primaria); }
 
 /* Indicador de "acima do tempo esperado" (SLA da faixa de prioridade). */
 .selo-atrasado {
@@ -247,6 +251,18 @@ img, svg { max-width: 100%; }
   font-size: 0.7rem; font-weight: 800; padding: 3px 9px; border-radius: 20px;
   background: var(--critica-fundo); color: var(--critica);
 }
+
+/* Selo de tempo de espera com meta do SLA embutida (ex.: "12 min / meta 15
+   min"), em 3 cores conforme o quanto já foi consumido da meta da faixa:
+   ok (neutro) → alerta (perto do limite, >=70%) → atrasado (estourou). */
+.selo-tempo {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+  background: #eef1f6; color: var(--texto-suave);
+}
+.selo-tempo .meta-tempo { opacity: 0.75; font-weight: 600; }
+.selo-tempo-alerta { background: var(--alta-fundo); color: var(--alta); }
+.selo-tempo-atrasado { background: var(--critica-fundo); color: var(--critica); }
 
 /* Badge de tendência (comparativo com o período anterior). */
 .tendencia { font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
@@ -309,11 +325,11 @@ img, svg { max-width: 100%; }
 }
 .portal-cartao:hover, .portal-cartao:focus-visible { transform: translateY(-4px); box-shadow: var(--sombra-forte); }
 .portal-cartao-icone {
-  width: 50px; height: 50px; border-radius: 14px;
+  width: 64px; height: 64px; border-radius: 18px;
   display: flex; align-items: center; justify-content: center;
   background: var(--primaria-clara); color: var(--primaria);
 }
-.portal-cartao-icone svg { width: 24px; height: 24px; }
+.portal-cartao-icone svg { width: 34px; height: 34px; }
 .portal-cartao-hotelaria .portal-cartao-icone { background: var(--hotelaria-fundo); color: var(--hotelaria); }
 .portal-cartao h2 { font-size: 1.15rem; }
 .portal-cartao p { margin: 0; color: var(--texto-suave); font-size: 0.9rem; line-height: 1.5; }
@@ -371,26 +387,6 @@ img, svg { max-width: 100%; }
 .stat-central.acento-sucesso .valor { color: var(--sucesso); }
 
 /* ==========================================================================
-   Painel "Atenção imediata"
-   ========================================================================== */
-.painel-atencao {
-  background: var(--branco);
-  border: 1px solid var(--borda);
-  border-left: 4px solid var(--critica);
-  border-radius: var(--raio); padding: 16px 18px; margin-bottom: 20px;
-  box-shadow: var(--sombra);
-}
-.painel-atencao-titulo { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--texto); margin-bottom: 10px; font-size: 0.95rem; }
-.painel-atencao-lista { display: flex; flex-wrap: wrap; gap: 10px; }
-.item-atencao {
-  display: flex; align-items: center; gap: 8px; background: var(--fundo);
-  border-radius: 12px; padding: 8px 14px; font-size: 0.85rem; font-weight: 700;
-  border: 1px solid var(--borda); min-height: var(--alvo-toque-min); color: var(--texto);
-}
-.item-atencao:hover { background: var(--primaria-clara); border-color: var(--primaria-suave); }
-.painel-atencao-vazio { color: var(--texto-suave); font-size: 0.85rem; font-weight: 600; }
-
-/* ==========================================================================
    Dashboard: cartões e gráficos de barra (compartilhado)
    ========================================================================== */
 .grade-cartoes-dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -444,6 +440,20 @@ img, svg { max-width: 100%; }
   display: flex; flex-wrap: wrap; gap: 14px; background: var(--branco); border: 1px solid var(--borda);
   border-radius: 14px; padding: 16px; margin-bottom: 16px; align-items: flex-end;
 }
+/* Variante usada só na Central de Enfermagem: agrupa chips (Status,
+   Prioridade) e campos de texto em blocos verticais, para caber tudo dentro
+   do mesmo painel "Mais filtros" sem virar uma linha imensa. */
+.painel-filtros-avancados:has(.grupo-chips-filtro) { flex-direction: column; align-items: stretch; }
+.painel-filtros-avancados .campos-filtro-linha {
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+}
+.grupo-chips-filtro { display: flex; flex-direction: column; gap: 6px; }
+.rotulo-grupo-filtro {
+  font-size: 0.74rem; font-weight: 800; color: var(--texto-suave);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.barra-filtros-central { justify-content: flex-end; margin-bottom: 12px; }
+.barra-filtros-central .botao-filtros-avancados { margin-left: 0; }
 .painel-filtros-sempre-visivel { display: flex; }
 .campo-filtro { display: flex; flex-direction: column; gap: 6px; min-width: 150px; flex: 1 1 150px; }
 .campo-filtro label { font-size: 0.74rem; font-weight: 700; color: var(--texto-suave); text-transform: uppercase; }
@@ -480,6 +490,56 @@ img, svg { max-width: 100%; }
   transition: transform .1s ease, box-shadow .15s ease; border: none; text-align: left; width: 100%; font: inherit; color: inherit;
 }
 .cartao-chamado-admin:hover, .cartao-chamado-admin:focus-visible { transform: translateY(-2px); box-shadow: var(--sombra-media); }
+
+/* ---------- Destaque de urgência para chamados críticos ----------
+   Fundo vermelho + oscilação sutil para chamar a atenção da equipe sem
+   dificultar a leitura. Reservado exclusivamente à CENTRAL (chamados que
+   ainda precisam de ação) — por isso o seletor é escopado ao container
+   `#listaChamados` da Central, e NUNCA ao `#listaHistorico`. O Histórico
+   mostra a mesma faixa "Crítico" de forma estática/discreta (só a borda),
+   sem piscar — um chamado já concluído não exige mais atenção imediata da
+   equipe, mesmo que tenha atingido prioridade crítica no passado. Respeita
+   `prefers-reduced-motion` (a animação para, mas o fundo vermelho fica). */
+#listaChamados .cartao-chamado-admin.borda-critica {
+  background: var(--critica-fundo);
+  border-left: 6px solid var(--critica);
+  animation: pulso-critico 1.6s ease-in-out infinite;
+  color: #4a0d0a;
+}
+#listaChamados .cartao-chamado-admin.borda-critica .leito-etiqueta-admin,
+#listaChamados .cartao-chamado-admin.borda-critica .categoria-cartao-admin { color: #4a0d0a; }
+#listaChamados .cartao-chamado-admin.borda-critica .selo-prioridade.selo-critica {
+  background: var(--critica); color: #fff;
+}
+@keyframes pulso-critico {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0.35), var(--sombra); }
+  50%      { box-shadow: 0 0 0 6px rgba(179, 38, 30, 0.05), 0 6px 20px rgba(179, 38, 30, 0.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #listaChamados .cartao-chamado-admin.borda-critica { animation: none; }
+}
+
+/* Histórico: visual estático, limpo e profissional — nunca pisca, mesmo
+   para chamados que atingiram prioridade crítica (já estão finalizados). */
+#listaHistorico .cartao-chamado-admin.borda-critica {
+  background: var(--branco);
+  animation: none;
+  color: inherit;
+}
+#listaHistorico .cartao-chamado-admin.borda-critica .leito-etiqueta-admin,
+#listaHistorico .cartao-chamado-admin.borda-critica .categoria-cartao-admin { color: inherit; }
+
+/* ---------- Cartão de chamado da Hotelaria: mesmo destaque na Central,
+   nunca no Histórico (ver .cartao-chamado.finalizado abaixo). ---------- */
+.cartao-chamado.critico {
+  background: var(--critica-fundo);
+  border-left-color: var(--critica) !important;
+  animation: pulso-critico 1.6s ease-in-out infinite;
+}
+.cartao-chamado.finalizado.critico { animation: none; background: var(--branco); }
+@media (prefers-reduced-motion: reduce) {
+  .cartao-chamado.critico { animation: none; }
+}
 .linha-cartao-admin { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; flex-wrap: wrap; }
 .leito-etiqueta-admin { font-weight: 800; font-size: 1.02rem; }
 .categoria-cartao-admin { font-size: 0.88rem; color: var(--texto); margin-bottom: 10px; }
@@ -510,19 +570,6 @@ img, svg { max-width: 100%; }
   display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; color: var(--texto-suave);
   background: var(--fundo); padding: 5px 10px; border-radius: 20px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .5px;
 }
-
-/* ==========================================================================
-   Abas simples (usadas no mobile do quadro Kanban da Central de Hotelaria)
-   ========================================================================== */
-.abas-mobile { display: none; gap: 6px; margin-bottom: 14px; }
-.abas-mobile button {
-  flex: 1; min-height: var(--alvo-toque-min); border: 1.5px solid var(--borda); background: var(--branco);
-  border-radius: 12px; font-weight: 700; font-size: 0.84rem; color: var(--texto-suave);
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-}
-.abas-mobile button.ativo { background: var(--primaria); border-color: var(--primaria); color: #fff; }
-.abas-mobile .contagem-aba { background: rgba(0,0,0,0.08); border-radius: 20px; padding: 1px 7px; font-size: 0.72rem; }
-.abas-mobile button.ativo .contagem-aba { background: rgba(255,255,255,0.25); }
 
 /* Paginação simples (Histórico) */
 .paginacao { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 20px; font-size: 0.86rem; color: var(--texto-suave); }

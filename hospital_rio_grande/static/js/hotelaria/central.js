@@ -3,26 +3,17 @@
 
   const escapeHtml = HRG.escapeHtml;
 
-  const colunas = {
-    pendente: document.getElementById("colunaPendente"),
-    em_andamento: document.getElementById("colunaAndamento"),
-    finalizado: document.getElementById("colunaFinalizado"),
-  };
-  const contagens = {
-    pendente: document.getElementById("contagemPendente"),
-    em_andamento: document.getElementById("contagemAndamento"),
-    finalizado: document.getElementById("contagemFinalizado"),
-  };
-  const contagensAba = {
-    pendente: document.getElementById("contagemAbaPendente"),
-    em_andamento: document.getElementById("contagemAbaAndamento"),
-    finalizado: document.getElementById("contagemAbaFinalizado"),
-  };
+  // Central de Hotelaria mostra apenas chamados que ainda precisam de ação
+  // (pendentes e em andamento). Finalizados vivem só na tela de Histórico.
+  // Lista única (mesma estrutura/cartão da Central de Enfermagem) — pendentes
+  // sempre à frente de em andamento, mas sem dividir em colunas separadas.
+  const lista = document.getElementById("listaChamados");
   const filtroBusca = document.getElementById("filtroBusca");
   const filtroServico = document.getElementById("filtroServico");
   const filtroAndar = document.getElementById("filtroAndar");
   const filtrosAtivosEl = document.getElementById("filtrosAtivos");
-  const abasMobile = document.getElementById("abasMobile");
+  const botaoFiltrosAvancados = document.getElementById("botaoFiltrosAvancados");
+  const painelFiltrosAvancados = document.getElementById("painelFiltrosAvancados");
   const fundoModal = document.getElementById("fundoModal");
   const modalChamado = document.getElementById("modalChamado");
 
@@ -38,8 +29,24 @@
 
   const ICONE_FECHAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 
+  async function carregarStats() {
+    try {
+      const { dados } = await HRG.fetchJSON("/hotelaria/api/central/resumo");
+      document.getElementById("statPendentes").textContent = dados.pendentes;
+      document.getElementById("statAndamento").textContent = dados.andamento;
+      document.getElementById("statNaoLidos").textContent = dados.nao_lidos;
+      document.getElementById("statAguardandoConfirmacao").textContent = dados.aguardando_confirmacao;
+      document.getElementById("statFinalizadosHoje").textContent = dados.finalizados_hoje;
+    } catch (e) {
+      // Silencioso: o polling tenta de novo no próximo ciclo.
+    }
+  }
+
   async function carregarChamados() {
     const params = new URLSearchParams({ servico: filtroServico.value });
+    // A Central pede só os ativos ao servidor (evita transportar finalizados
+    // que nem seriam renderizados aqui, e mantém o polling leve).
+    params.set("status_ativos", "1");
     if (filtroAndar.value) params.set("andar", filtroAndar.value);
     if (filtroBusca.value.trim()) params.set("q", filtroBusca.value.trim());
 
@@ -55,22 +62,24 @@
     if (novos.length) HRG.tocarAlertaNovoChamado();
 
     if (!detectorLista(chamados)) return;
-    renderColunas(chamados);
+    renderLista(chamados);
   }
 
-  function renderColunas(chamados) {
-    const grupos = { pendente: [], em_andamento: [], finalizado: [] };
-    chamados.forEach((c) => grupos[c.status] && grupos[c.status].push(c));
-
-    Object.entries(grupos).forEach(([status, lista]) => {
-      contagens[status].textContent = lista.length;
-      if (contagensAba[status]) contagensAba[status].textContent = lista.length;
-      colunas[status].innerHTML = lista.length
-        ? lista.map(cartaoChamadoHtml).join("")
-        : `<div class="vazio-coluna">Nenhum chamado</div>`;
-    });
-
-    document.querySelectorAll(".cartao-chamado").forEach((elCard) => {
+  function renderLista(chamados) {
+    // Finalizados são filtrados aqui também para blindar contra qualquer
+    // reintrodução involuntária pelo endpoint (a Central deve mostrar
+    // apenas chamados ativos; finalizados só no Histórico).
+    const ativos = chamados.filter((c) => c.status !== "finalizado");
+    if (!ativos.length) {
+      lista.innerHTML = `<div class="estado-vazio">Nenhum chamado encontrado com estes filtros.</div>`;
+      return;
+    }
+    // Pendentes sempre à frente de em andamento (mesma prioridade visual da
+    // Central de Enfermagem: quem ainda não foi assumido aparece primeiro).
+    const pendentes = ativos.filter((c) => c.status === "pendente");
+    const andamento = ativos.filter((c) => c.status === "em_andamento");
+    lista.innerHTML = pendentes.concat(andamento).map(cartaoChamadoHtml).join("");
+    lista.querySelectorAll(".cartao-chamado-admin").forEach((elCard) => {
       elCard.addEventListener("click", () => abrirModal(parseInt(elCard.dataset.id, 10)));
     });
   }
@@ -78,47 +87,26 @@
   function indicadoresHtml(c) {
     const pontos = [];
     if (c.nao_lida) pontos.push('<span class="ponto-indicador laranja" title="Nova mensagem"></span>');
-    if (c.nao_resolvido) pontos.push('<span class="ponto-indicador vermelho" title="Atendimento não resolvido"></span>');
     return pontos.length ? `<span class="indicadores-cartao">${pontos.join("")}</span>` : "";
   }
 
-  function localHtml(c) {
-    return `
-      <div class="local-cartao">
-        ${c.andar ? `<span class="local-andar">${escapeHtml(c.andar)}</span>` : ""}
-        <span class="local-leito">Leito ${escapeHtml(c.leito)}</span>
-      </div>
-    `;
-  }
-
   function cartaoChamadoHtml(c) {
+    const borda = c.status === "pendente" ? "borda-alta" : "borda-andamento";
     return `
-      <button type="button" class="cartao-chamado ${c.status} surgir" data-id="${c.id}">
-        <div class="linha-cartao-topo">
-          ${localHtml(c)}
+      <button type="button" class="cartao-chamado-admin ${borda} surgir" data-id="${c.id}">
+        <div class="linha-cartao-admin">
+          <span class="leito-etiqueta-admin">Leito ${escapeHtml(c.leito)}${c.andar ? ` · ${escapeHtml(c.andar)}` : ""}</span>
           <span class="servico-etiqueta">${escapeHtml(c.servico_nome)}</span>
         </div>
-        <p class="descricao-cartao">${escapeHtml(c.descricao_exibicao || c.descricao)}</p>
-        <div class="rodape-cartao">
-          ${indicadoresHtml(c)}
+        <div class="categoria-cartao-admin">${escapeHtml(c.descricao_exibicao || c.descricao)}</div>
+        <div class="rodape-cartao-admin">
+          <span class="selo-status selo-status-${c.status}">${escapeHtml(rotuloStatus(c.status))}</span>
           <span>Aberto às ${c.criado_em}</span>
+          ${indicadoresHtml(c)}
         </div>
       </button>
     `;
   }
-
-  // ---------------------------------------------------------------------
-  // Abas mobile (Kanban vira abas em telas estreitas — ver hotelaria.css)
-  // ---------------------------------------------------------------------
-  abasMobile.querySelectorAll("button").forEach((botaoAba) => {
-    botaoAba.addEventListener("click", () => {
-      abasMobile.querySelectorAll("button").forEach((b) => b.classList.remove("ativo"));
-      botaoAba.classList.add("ativo");
-      document.querySelectorAll(".coluna-central").forEach((col) => {
-        col.classList.toggle("aba-ativa", col.dataset.coluna === botaoAba.dataset.aba);
-      });
-    });
-  });
 
   // ---------------------------------------------------------------------
   // Filtros ativos (busca/andar) — servico já tem seu próprio select visível.
@@ -240,7 +228,7 @@
     try {
       await HRG.fetchJSON(endpoint, opcoes);
       await renderModal();
-      await carregarChamados();
+      await Promise.all([carregarStats(), carregarChamados()]);
     } catch (err) {
       HRG.toast(err.message, "erro");
     }
@@ -272,11 +260,21 @@
     if (controladorPollingModal) { controladorPollingModal.parar(); controladorPollingModal = null; }
   }
 
+  async function carregarTudo() {
+    await Promise.all([carregarStats(), carregarChamados()]);
+  }
+
   filtroServico.addEventListener("change", carregarChamados);
   filtroAndar.addEventListener("change", () => { renderFiltrosAtivos(); carregarChamados(); });
   filtroBusca.addEventListener("input", HRG.debounce(() => { renderFiltrosAtivos(); carregarChamados(); }, 350));
+
+  botaoFiltrosAvancados.addEventListener("click", () => {
+    const abrir = painelFiltrosAvancados.hidden;
+    painelFiltrosAvancados.hidden = !abrir;
+    botaoFiltrosAvancados.setAttribute("aria-expanded", String(abrir));
+  });
   fundoModal.addEventListener("click", (e) => { if (e.target === fundoModal) fecharModal(); });
   HRG.fecharComEsc(() => fundoModal.classList.contains("aberto"), fecharModal);
 
-  HRG.pollWhileVisible(carregarChamados, 5000);
+  HRG.pollWhileVisible(carregarTudo, 5000);
 })();

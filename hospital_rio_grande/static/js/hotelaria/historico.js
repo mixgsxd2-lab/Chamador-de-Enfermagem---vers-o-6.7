@@ -13,6 +13,16 @@
   const paginacaoEl = document.getElementById("paginacaoHistorico");
   const textoPaginacao = document.getElementById("textoPaginacao");
   const botaoCarregarMais = document.getElementById("botaoCarregarMais");
+  const botaoFiltrosAvancados = document.getElementById("botaoFiltrosAvancados");
+  const painelFiltrosAvancados = document.getElementById("painelFiltrosAvancados");
+
+  if (botaoFiltrosAvancados && painelFiltrosAvancados) {
+    botaoFiltrosAvancados.addEventListener("click", () => {
+      const abrir = painelFiltrosAvancados.hidden;
+      painelFiltrosAvancados.hidden = !abrir;
+      botaoFiltrosAvancados.setAttribute("aria-expanded", String(abrir));
+    });
+  }
 
   const ICONE_FECHAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   const TAMANHO_PAGINA = 30;

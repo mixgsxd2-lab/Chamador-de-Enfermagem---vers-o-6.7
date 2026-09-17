@@ -146,12 +146,15 @@
     area.innerHTML = `
       <div class="cartao-passo texto-centro surgir">
         <p><b>Como foi o atendimento?</b></p>
-        <p class="texto-suave" style="margin-top:-8px;">A avaliação é opcional.</p>
+        <p class="texto-suave" style="margin-top:-8px;">A avaliação é sempre opcional.</p>
         <div class="estrelas-selecao" id="estrelasSelecao">
           ${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-n="${n}" aria-label="${n} estrela${n > 1 ? "s" : ""}">★</button>`).join("")}
         </div>
         <textarea id="comentarioAvaliacao" maxlength="300" placeholder="Comentário (opcional)" aria-label="Comentário sobre o atendimento"></textarea>
         <button class="botao botao-primario botao-bloco" id="botaoEnviarAvaliacao" style="margin-top:12px;">Enviar avaliação</button>
+        <button class="botao-sair-sem-avaliar" id="botaoSairSemAvaliar" type="button">
+          Sair sem avaliar
+        </button>
       </div>
     `;
 
@@ -164,6 +167,17 @@
     });
 
     document.getElementById("botaoEnviarAvaliacao").addEventListener("click", enviarAvaliacao);
+    document.getElementById("botaoSairSemAvaliar").addEventListener("click", sairSemAvaliar);
+  }
+
+  // "Sair sem avaliar": libera o dispositivo (remove a referência do
+  // chamado ativo salva no navegador) e leva o paciente de volta à tela
+  // inicial, sem tocar em nada no banco. A avaliação é OPCIONAL — nunca
+  // pode bloquear o paciente de sair.
+  function sairSemAvaliar() {
+    try { localStorage.removeItem("rg_enfermagem_chamado_ativo"); } catch (e) {}
+    clearInterval(intervaloTick);
+    window.location.href = "/enfermagem/paciente";
   }
 
   async function enviarAvaliacao() {

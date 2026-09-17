@@ -9,6 +9,17 @@
     outros: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
   };
   const ICONE_CHECK = '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+  // Escala de dor: 4 níveis, do mais grave para o mais leve (mesma ordem
+  // da lista em enfermagem/constants.py::CATEGORIAS["Dor"]["opcoes"]).
+  // Cada nível vira um botão gigante com rosto + cor, para que o paciente
+  // possa escolher pela expressão facial mesmo sem conseguir ler.
+  const NIVEIS_DOR = [
+    { rosto: "🥵", nivel: 4, curto: "Dor no peito",   dica: "Aperto no peito ou falta de ar — chamamos AGORA" },
+    { rosto: "😖", nivel: 3, curto: "Dor muito forte", dica: "Difícil de aguentar" },
+    { rosto: "😣", nivel: 2, curto: "Dor moderada",    dica: "Incomoda, mas dá pra aguentar" },
+    { rosto: "🙂", nivel: 1, curto: "Dor leve",        dica: "Pequena, quase não atrapalha" },
+  ];
   const ICONE_ENCAMINHADO = '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
 
   const CATEGORIAS_ORDEM = Object.keys(window.CATEGORIAS || {});
@@ -168,32 +179,61 @@
     definirPasso(3);
     const dados = window.CATEGORIAS[state.categoria];
     const envioDireto = state.categoria === CATEGORIA_ENVIO_DIRETO;
-    const opcoesHtml = dados.opcoes.map((texto) => `
-      <button type="button" class="opcao-subcategoria" data-opcao="${escapeHtml(texto)}">
-        <span>${escapeHtml(texto)}</span>
-        <span class="marcador-opcao"></span>
-      </button>
-    `).join("");
+    const eDor = state.categoria === "Dor";
+
+    let listaHtml;
+    if (eDor) {
+      // Escala visual de dor (rosto + cor + rótulo). Cada opção é mapeada
+      // para a subopção equivalente já cadastrada em CATEGORIAS.Dor.opcoes
+      // (busca por prefixo/nome curto), preservando o peso de gravidade que
+      // o backend usa para priorizar.
+      const opcoesDisponiveis = dados.opcoes; // apenas strings
+      const encontraOpcao = (curto) => opcoesDisponiveis.find((o) => o === curto) ||
+                                        opcoesDisponiveis.find((o) => o.toLowerCase().startsWith(curto.toLowerCase().split(" ")[0]));
+      listaHtml = `<div class="escala-dor surgir">` + NIVEIS_DOR
+        .filter((n) => encontraOpcao(n.curto))
+        .map((n) => {
+          const opcao = encontraOpcao(n.curto);
+          return `
+            <button type="button" class="opcao-dor nivel-${n.nivel}" data-opcao="${escapeHtml(opcao)}">
+              <span class="rosto-dor" aria-hidden="true">${n.rosto}</span>
+              <span class="texto-dor">
+                <strong>${escapeHtml(n.curto)}</strong>
+                <small>${escapeHtml(n.dica)}</small>
+              </span>
+            </button>
+          `;
+        }).join("") + `</div>`;
+    } else {
+      listaHtml = `<div class="lista-subcategorias surgir">` + dados.opcoes.map((texto) => `
+        <button type="button" class="opcao-subcategoria" data-opcao="${escapeHtml(texto)}">
+          <span>${escapeHtml(texto)}</span>
+          <span class="marcador-opcao"></span>
+        </button>
+      `).join("") + `</div>`;
+    }
 
     el.tela.innerHTML = `
       <div class="cabecalho-passo">
         <h1>${escapeHtml(state.categoria)}</h1>
-        <p>${envioDireto ? "Escolha o assunto — o chamado é enviado na hora" : "Escolha a opção que melhor descreve a situação"}</p>
+        <p>${eDor ? "Toque no rosto que mostra como você está" : (envioDireto ? "Escolha o assunto — o chamado é enviado na hora" : "Escolha a opção que melhor descreve a situação")}</p>
       </div>
-      <div class="lista-subcategorias surgir">${opcoesHtml}</div>
+      ${listaHtml}
     `;
     el.botaoVoltar.onclick = renderPasso2;
+
+    const seletor = eDor ? ".opcao-dor" : ".opcao-subcategoria";
 
     if (envioDireto) {
       // Sem passo de confirmação: a própria escolha da subopção já cria o
       // chamado.
       el.barra.innerHTML = "";
       let enviando = false;
-      el.tela.querySelectorAll(".opcao-subcategoria").forEach((botao) => {
+      el.tela.querySelectorAll(seletor).forEach((botao) => {
         botao.addEventListener("click", () => {
           if (enviando) return;
           enviando = true;
-          el.tela.querySelectorAll(".opcao-subcategoria").forEach((b) => { b.disabled = true; });
+          el.tela.querySelectorAll(seletor).forEach((b) => { b.disabled = true; });
           botao.classList.add("selecionada");
           state.subcategoria = botao.dataset.opcao;
           enviarChamado();
@@ -204,9 +244,9 @@
 
     el.barra.innerHTML = `<button class="botao botao-primario botao-bloco" id="botaoContinuar3" disabled>Continuar</button>`;
     const botaoContinuar = document.getElementById("botaoContinuar3");
-    el.tela.querySelectorAll(".opcao-subcategoria").forEach((botao) => {
+    el.tela.querySelectorAll(seletor).forEach((botao) => {
       botao.addEventListener("click", () => {
-        el.tela.querySelectorAll(".opcao-subcategoria").forEach((b) => b.classList.remove("selecionada"));
+        el.tela.querySelectorAll(seletor).forEach((b) => b.classList.remove("selecionada"));
         botao.classList.add("selecionada");
         state.subcategoria = botao.dataset.opcao;
         botaoContinuar.disabled = false;

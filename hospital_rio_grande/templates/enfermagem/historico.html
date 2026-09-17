@@ -27,28 +27,25 @@
       <div class="stat-central"><span class="valor" id="mAvaliacao">-</span><span class="rotulo">Avaliação média</span></div>
     </div>
 
-    <div class="painel-filtros-avancados painel-filtros-sempre-visivel">
+    <div class="barra-filtros barra-filtros-central">
+      <button class="botao-filtros-avancados" id="botaoFiltrosAvancados" type="button" aria-expanded="false" aria-controls="painelFiltrosAvancados">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
+        Mais filtros
+      </button>
+    </div>
+
+    <div class="painel-filtros-avancados" id="painelFiltrosAvancados" hidden>
       <div class="campo-filtro campo-filtro-busca">
         <label for="filtroBusca">Buscar</label>
         <input type="text" id="filtroBusca" placeholder="Leito, categoria, detalhe...">
       </div>
       <div class="campo-filtro">
-        <label for="filtroStatus">Status</label>
-        <select id="filtroStatus">
-          <option value="">Todos</option>
-          <option value="pendente">Pendentes</option>
-          <option value="em_atendimento">Em atendimento</option>
-          <option value="finalizado">Finalizados</option>
-        </select>
-      </div>
-      <div class="campo-filtro">
         <label for="filtroPrioridade">Prioridade</label>
         <select id="filtroPrioridade">
           <option value="">Todas</option>
-          <option value="critica">🔴 Crítica</option>
-          <option value="alta">🟠 Alta</option>
-          <option value="media">🟡 Média</option>
-          <option value="baixa">🟢 Baixa</option>
+          <option value="critica">🔴 Crítico</option>
+          <option value="media">🟡 Médio</option>
+          <option value="baixa">🟢 Baixo</option>
         </select>
       </div>
       <div class="campo-filtro">

@@ -4,7 +4,7 @@ from enfermagem.constants import STATUS_LABELS
 from enfermagem.priority import calcular_prioridade, excedeu_sla
 
 
-def chamado_to_dict(chamado, chamados_mesmo_leito=None, incluir_prioridade=True):
+def chamado_to_dict(chamado, incluir_prioridade=True):
     dados = {
         "id": chamado.id,
         "andar": chamado.andar,
@@ -26,12 +26,13 @@ def chamado_to_dict(chamado, chamados_mesmo_leito=None, incluir_prioridade=True)
     }
 
     if incluir_prioridade:
-        prioridade = calcular_prioridade(chamado, chamados_mesmo_leito)
+        prioridade = calcular_prioridade(chamado)
         dados["prioridade"] = prioridade["tier"]
         dados["prioridade_label"] = prioridade["tier_label"]
         dados["prioridade_emoji"] = prioridade["tier_emoji"]
         dados["prioridade_score"] = prioridade["score"]
         dados["tempo_espera_min"] = prioridade["tempo_espera_min"]
+        dados["sla_min"] = prioridade["sla_min"]
         dados["acima_do_tempo_esperado"] = excedeu_sla(prioridade["tier"], prioridade["tempo_espera_min"])
 
     return dados

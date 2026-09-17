@@ -4,11 +4,26 @@
   const escapeHtml = HRG.escapeHtml;
   const formatarMinutos = HRG.formatarMinutos;
 
+  // A partir de quanto da meta do SLA já consumida o selo de tempo de
+  // espera passa de "ok" para "alerta" (antes de efetivamente estourar e
+  // virar "atrasado", que é quem manda no `acima_do_tempo_esperado` vindo
+  // do backend — ver enfermagem/priority.py::excedeu_sla).
+  const LIMIAR_ALERTA_SLA = 0.7;
+
+  function nivelTempoEspera(c) {
+    if (c.acima_do_tempo_esperado) return "atrasado";
+    if (c.sla_min && c.tempo_espera_min >= c.sla_min * LIMIAR_ALERTA_SLA) return "alerta";
+    return "ok";
+  }
+
+  function seloTempoEspera(c) {
+    const meta = c.sla_min != null ? ` <span class="meta-tempo">/ meta ${Math.round(c.sla_min)}min</span>` : "";
+    return `<span class="selo-tempo selo-tempo-${nivelTempoEspera(c)}">⏱ ${formatarMinutos(c.tempo_espera_min)}${meta}</span>`;
+  }
+
   const lista = document.getElementById("listaChamados");
   const fundoModal = document.getElementById("fundoModal");
   const modalChamado = document.getElementById("modalChamado");
-  const painelAtencao = document.getElementById("painelAtencao");
-  const listaAtencaoImediata = document.getElementById("listaAtencaoImediata");
   const filtrosAtivosEl = document.getElementById("filtrosAtivos");
 
   const chipsStatus = document.getElementById("chipsStatus");
@@ -23,7 +38,11 @@
   const filtroOrdenar = document.getElementById("filtroOrdenar");
   const botaoLimparFiltros = document.getElementById("botaoLimparFiltros");
 
-  const filtros = { status: "", prioridade: "" };
+  // A Central mostra apenas chamados que ainda precisam de ação — finalizados
+  // vivem só no Histórico. O filtro de status "" (Todos ativos) e as opções
+  // "Pendentes" / "Em atendimento" são as únicas expostas na UI, e no
+  // servidor pedimos a lista já sem finalizados (`status_ativos=1`).
+  const filtros = { status: "", prioridade: "", status_ativos: "1" };
   let chamadoAbertoId = null;
   let ultimaListaConhecida = [];
   const detectorLista = HRG.criarDetectorDeMudanca();
@@ -43,7 +62,6 @@
       document.getElementById("statCriticos").textContent = dados.contadores.criticos;
       document.getElementById("statAtrasados").textContent = dados.contadores.atrasados;
       document.getElementById("statFinalizadosHoje").textContent = dados.contadores.finalizados_hoje;
-      renderAtencaoImediata(dados.atencao_imediata || []);
 
       const novos = detectorNovosChamados(dados.fila || []);
       if (novos.length) HRG.tocarAlertaNovoChamado();
@@ -51,24 +69,6 @@
       // Silencioso: o polling tenta de novo no próximo ciclo. Um erro aqui
       // não deve interromper a lista principal, que tem seu próprio tratamento.
     }
-  }
-
-  function renderAtencaoImediata(itens) {
-    if (!itens.length) {
-      painelAtencao.hidden = true;
-      return;
-    }
-    painelAtencao.hidden = false;
-    listaAtencaoImediata.innerHTML = itens.map((c) => `
-      <button type="button" class="item-atencao" data-id="${c.id}">
-        <span class="selo-prioridade selo-${c.prioridade}">${c.prioridade_emoji}</span>
-        Leito ${escapeHtml(c.leito)} — ${escapeHtml(c.subcategoria)}
-        ${c.acima_do_tempo_esperado ? `<span class="selo-atrasado">⏱ ${formatarMinutos(c.tempo_espera_min)}</span>` : ""}
-      </button>
-    `).join("");
-    listaAtencaoImediata.querySelectorAll(".item-atencao").forEach((el) => {
-      el.addEventListener("click", () => abrirModal(parseInt(el.dataset.id, 10), ultimaListaConhecida));
-    });
   }
 
   function paramsAtuais() {
@@ -127,8 +127,7 @@
         <div class="categoria-cartao-admin">${escapeHtml(c.categoria)} — ${escapeHtml(c.subcategoria)}</div>
         <div class="rodape-cartao-admin">
           <span class="selo-status selo-status-${c.status}">${escapeHtml(c.status_label)}</span>
-          <span>⏱ ${formatarMinutos(c.tempo_espera_min)}</span>
-          ${c.acima_do_tempo_esperado ? `<span class="selo-atrasado">Acima do esperado</span>` : ""}
+          ${seloTempoEspera(c)}
         </div>
       </button>
     `;
@@ -174,7 +173,7 @@
         <div><b>Aberto em:</b> ${c.criado_em}</div>
         ${c.inicio_atendimento ? `<div><b>Assumido em:</b> ${c.inicio_atendimento}</div>` : ""}
         ${c.finalizado_em ? `<div><b>Finalizado em:</b> ${c.finalizado_em}</div>` : ""}
-        <div><b>Tempo de espera:</b> ${formatarMinutos(c.tempo_espera_min)}</div>
+        <div><b>Tempo de espera:</b> ${seloTempoEspera(c)}</div>
         ${c.tempo_atendimento_min != null ? `<div><b>Tempo de atendimento:</b> ${formatarMinutos(c.tempo_atendimento_min)}</div>` : ""}
         ${c.avaliacao != null ? `<div><b>Avaliação do paciente:</b> ${"★".repeat(c.avaliacao)}${"☆".repeat(5 - c.avaliacao)}</div>` : ""}
       </div>
@@ -312,10 +311,10 @@
   HRG.fecharComEsc(() => fundoModal.classList.contains("aberto"), fecharModal);
 
   // ---------------------------------------------------------------------
-  // Atualização em quase tempo real por polling. A prioridade também
-  // "envelhece" com o tempo de espera, então a lista precisa ser
-  // reconsultada periodicamente para refletir a nova ordenação mesmo sem
-  // nenhuma ação nova de ninguém. Pausa quando a aba não está visível.
+  // Atualização em quase tempo real por polling. O tempo de espera de
+  // cada chamado avança sozinho (e pode cruzar o SLA da faixa), então a
+  // lista precisa ser reconsultada periodicamente mesmo sem nenhuma ação
+  // nova de ninguém. Pausa quando a aba não está visível.
   // ---------------------------------------------------------------------
   HRG.pollWhileVisible(carregarTudo, 5000);
 })();

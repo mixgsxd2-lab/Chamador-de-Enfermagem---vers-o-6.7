@@ -30,7 +30,7 @@ from enfermagem.constants import (
 )
 from enfermagem.models import ChamadoEnfermagem
 from enfermagem.serializers import chamado_to_dict
-from enfermagem.priority import JANELA_REINCIDENCIA_HORAS, calcular_prioridade, excedeu_sla
+from enfermagem.priority import calcular_prioridade, excedeu_sla
 
 from hotelaria.services import criar_chamado_hotelaria
 
@@ -84,6 +84,11 @@ def _construir_filtros(args, ignorar_periodo=False):
     if status:
         clausulas.append("status = ?")
         params.append(status)
+    elif args.get("status_ativos"):
+        # Central de Enfermagem: só quem ainda precisa de ação (finalizados
+        # ficam apenas no Histórico). Ignorado quando um `status` explícito
+        # foi passado.
+        clausulas.append(f"status IN ('{STATUS_PENDENTE}', '{STATUS_EM_ATENDIMENTO}')")
     if andar:
         clausulas.append("andar = ?")
         params.append(andar)
@@ -119,42 +124,10 @@ def _construir_filtros(args, ignorar_periodo=False):
     return clausulas, params
 
 
-def _mapa_reincidencia(chamados):
-    """Para cada chamado da lista, devolve as chamadas ANTERIORES do mesmo
-    leito dentro da janela de reincidência — usado pelo motor de
-    prioridade. Feito em lote (1 consulta extra) para não gerar N+1
-    consultas quando a lista tem muitos chamados."""
-    if not chamados:
-        return {}
-
-    db = get_db()
-    limite_inferior = para_texto(min(c.criado_em for c in chamados) - timedelta(hours=JANELA_REINCIDENCIA_HORAS))
-    leitos = sorted({c.leito for c in chamados})
-    marcadores = ",".join("?" for _ in leitos)
-    linhas = db.execute(
-        f"SELECT * FROM enfermagem_chamados WHERE leito IN ({marcadores}) AND criado_em >= ?",
-        (*leitos, limite_inferior),
-    ).fetchall()
-    candidatos = [_row_para_chamado(r) for r in linhas]
-
-    por_leito = {}
-    for c in candidatos:
-        por_leito.setdefault(c.leito, []).append(c)
-
-    mapa = {}
-    for c in chamados:
-        mapa[c.id] = [
-            o for o in por_leito.get(c.leito, [])
-            if o.id != c.id and o.criado_em < c.criado_em
-        ]
-    return mapa
-
-
 def _serializar_lista(chamados):
     """Serializa sem se preocupar com ordenação (usado nas métricas, onde a
     ordem não importa)."""
-    reincidencia = _mapa_reincidencia(chamados)
-    return [chamado_to_dict(c, reincidencia.get(c.id, [])) for c in chamados]
+    return [chamado_to_dict(c) for c in chamados]
 
 
 def _preparar_lista(chamados, ordenar="prioridade"):
@@ -165,8 +138,7 @@ def _preparar_lista(chamados, ordenar="prioridade"):
     A ordenação é sempre feita sobre objetos com datetime real, nunca sobre
     texto já formatado. A prioridade de cada chamado é calculada uma única
     vez e reaproveitada tanto para ordenar quanto para serializar."""
-    reincidencia = _mapa_reincidencia(chamados)
-    pares = [(c, calcular_prioridade(c, reincidencia.get(c.id, []))) for c in chamados]
+    pares = [(c, calcular_prioridade(c)) for c in chamados]
 
     if ordenar == "recentes":
         pares.sort(key=lambda par: par[0].criado_em, reverse=True)
@@ -188,6 +160,7 @@ def _preparar_lista(chamados, ordenar="prioridade"):
             "prioridade_emoji": prioridade["tier_emoji"],
             "prioridade_score": prioridade["score"],
             "tempo_espera_min": prioridade["tempo_espera_min"],
+            "sla_min": prioridade["sla_min"],
             "acima_do_tempo_esperado": excedeu_sla(prioridade["tier"], prioridade["tempo_espera_min"]),
         })
         resultado.append(d)
@@ -325,8 +298,7 @@ def listar_chamados():
 @api_bp.route("/chamados/<int:chamado_id>", methods=["GET"])
 def detalhe_chamado(chamado_id):
     chamado = _buscar_ou_404(chamado_id)
-    outros = _mapa_reincidencia([chamado]).get(chamado.id, [])
-    return jsonify(chamado_to_dict(chamado, outros))
+    return jsonify(chamado_to_dict(chamado))
 
 
 # ---------------------------------------------------------------------------
@@ -456,9 +428,9 @@ def dashboard_tv():
         (hoje_texto,),
     ).fetchone()[0]
 
-    contagem_prioridade = {"critica": 0, "alta": 0, "media": 0, "baixa": 0}
+    contagem_prioridade = {"critica": 0, "media": 0, "baixa": 0}
     for c in fila:
-        contagem_prioridade[c["prioridade"]] += 1
+        contagem_prioridade[c["prioridade"]] = contagem_prioridade.get(c["prioridade"], 0) + 1
 
     atrasados = [c for c in fila if c["acima_do_tempo_esperado"]]
 
@@ -470,7 +442,6 @@ def dashboard_tv():
             "pendentes": sum(1 for c in fila if c["status"] == STATUS_PENDENTE),
             "em_atendimento": sum(1 for c in fila if c["status"] == STATUS_EM_ATENDIMENTO),
             "criticos": contagem_prioridade["critica"],
-            "alta_prioridade": contagem_prioridade["alta"],
             "atrasados": len(atrasados),
             "total_hoje": total_hoje,
             "finalizados_hoje": total_finalizados_hoje,
@@ -526,7 +497,7 @@ def metricas():
         return round(sum(lista) / len(lista), 1) if lista else None
 
     por_categoria = {}
-    por_prioridade = {"critica": 0, "alta": 0, "media": 0, "baixa": 0}
+    por_prioridade = {"critica": 0, "media": 0, "baixa": 0}
     por_andar = {}
     for c in serializados:
         por_categoria[c["categoria"]] = por_categoria.get(c["categoria"], 0) + 1

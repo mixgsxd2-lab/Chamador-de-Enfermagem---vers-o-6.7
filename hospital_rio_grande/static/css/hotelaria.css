@@ -52,25 +52,27 @@
   line-height: 1.5;
 }
 
-/* Cartões de serviço */
+/* Cartões de serviço — grandes, com ícone bem visível para escolha rápida
+   mesmo sem ler os textos de apoio. */
 .grade-servicos { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
 .cartao-servico {
-  display: flex; align-items: center; gap: 16px;
-  background: var(--branco); border-radius: var(--raio); padding: 18px;
+  display: flex; align-items: center; gap: 18px;
+  background: var(--branco); border-radius: var(--raio); padding: 22px 20px;
   border: 2px solid var(--borda); box-shadow: var(--sombra);
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  text-align: left; width: 100%; min-height: var(--alvo-toque-min);
+  text-align: left; width: 100%; min-height: 88px;
 }
 .cartao-servico:hover, .cartao-servico:focus-visible { transform: translateY(-3px); box-shadow: var(--sombra-media); border-color: var(--primaria-suave); }
 .cartao-servico.selecionado { border-color: var(--primaria); background: var(--primaria-clara); }
 .cartao-servico .icone-servico {
-  flex-shrink: 0; width: 54px; height: 54px; border-radius: 14px;
+  flex-shrink: 0; width: 64px; height: 64px; border-radius: 18px;
   background: var(--primaria-clara);
   display: flex; align-items: center; justify-content: center;
   color: var(--primaria);
 }
-.cartao-servico .texto-servico h3 { margin: 0 0 4px; font-size: 1.02rem; }
-.cartao-servico .texto-servico p { margin: 0; font-size: 0.82rem; color: var(--texto-suave); line-height: 1.4; }
+.cartao-servico .icone-servico svg { width: 34px; height: 34px; }
+.cartao-servico .texto-servico h3 { margin: 0 0 4px; font-size: 1.15rem; font-weight: 800; }
+.cartao-servico .texto-servico p { margin: 0; font-size: 0.88rem; color: var(--texto-suave); line-height: 1.4; }
 
 /* Descrição do chamado */
 .campo-descricao textarea {
@@ -127,23 +129,14 @@
 .indicador-passos span { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.3); }
 .indicador-passos span.ativo { background: #fff; }
 
-/* ---------- Central de serviços (quadro Kanban) ---------- */
-.colunas-central { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.coluna-central { display: flex; flex-direction: column; gap: 12px; }
-.titulo-coluna {
-  font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-suave);
-  display: flex; align-items: center; justify-content: space-between; padding: 0 4px;
-}
-.contagem-coluna { background: var(--primaria-clara); color: var(--primaria); border-radius: 20px; padding: 2px 10px; font-size: 0.78rem; }
-
+/* ---------- Cartão de chamado (Histórico — a Central usa o cartão
+   compartilhado .cartao-chamado-admin de base.css, igual à Enfermagem) ---------- */
 .cartao-chamado {
   background: var(--branco); border-radius: 14px; padding: 16px 18px; box-shadow: var(--sombra);
   border-left: 4px solid var(--primaria); cursor: pointer; transition: transform .12s ease, box-shadow .12s ease;
   border-top: none; border-right: none; border-bottom: none; text-align: left; width: 100%; font: inherit; color: inherit;
 }
 .cartao-chamado:hover, .cartao-chamado:focus-visible { transform: translateY(-2px); box-shadow: var(--sombra-media); }
-.cartao-chamado.pendente { border-left-color: var(--alta); }
-.cartao-chamado.em_andamento { border-left-color: var(--primaria); }
 .cartao-chamado.finalizado { border-left-color: var(--baixa); }
 .linha-cartao-topo { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
 
@@ -172,21 +165,10 @@
 .indicadores-cartao { display: flex; align-items: center; gap: 6px; }
 .ponto-indicador { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px var(--branco); }
 .ponto-indicador.laranja { background: var(--alta); }
-.ponto-indicador.vermelho { background: var(--critica); }
 
 .avaliacao-exibicao { display: flex; align-items: center; gap: 6px; color: #92720a; font-weight: 700; }
 
 /* ---------- Utilidades ---------- */
 .svg-icone { width: 26px; height: 26px; }
 .svg-icone-pequeno { width: 18px; height: 18px; }
-
-/* Quadro Kanban em telas menores: 3 abas em vez de 3 colunas empilhadas —
-   evita rolar por 3 listas inteiras uma atrás da outra no celular. */
-@media (max-width: 700px) {
-  .abas-mobile { display: flex; }
-  .colunas-central { display: block; }
-  .coluna-central { display: none; }
-  .coluna-central.aba-ativa { display: flex; }
-  .titulo-coluna { display: none; }
-}
 
