@@ -459,6 +459,19 @@ img, svg { max-width: 100%; }
 }
 .barra-filtros-central { justify-content: flex-end; margin-bottom: 12px; }
 .barra-filtros-central .botao-filtros-avancados { margin-left: 0; }
+/* Botão de acesso ao Dashboard Executivo (Dashboard de Enfermagem). */
+.botao-dashboard-executivo {
+  min-height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 8px 7px 14px;
+  border-radius: 20px; background: linear-gradient(135deg, var(--primaria) 0%, var(--primaria-escura) 100%);
+  color: #fff; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(74, 118, 163, .3);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.botao-dashboard-executivo:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(74, 118, 163, .38); }
+.botao-dashboard-executivo svg { width: 16px; height: 16px; }
+.botao-dashboard-executivo .selo-novo {
+  background: rgba(255, 255, 255, .2); border-radius: 12px; padding: 3px 8px; font-size: 0.68rem; font-weight: 700;
+}
+@media (max-width: 420px) { .botao-dashboard-executivo .selo-novo { display: none; } }
 .painel-filtros-sempre-visivel { display: flex; }
 .campo-filtro { display: flex; flex-direction: column; gap: 6px; min-width: 150px; flex: 1 1 150px; }
 .campo-filtro label { font-size: 0.74rem; font-weight: 700; color: var(--texto-suave); text-transform: uppercase; }

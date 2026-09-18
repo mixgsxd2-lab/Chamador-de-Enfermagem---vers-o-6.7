@@ -3,7 +3,7 @@
 
   const ICONES = {
     urgencia: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
-    dor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>',
+    dor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="16.4" cy="5" rx="2.7" ry="3.3" transform="rotate(15 16.4 5)"/><path d="M13.2 9.9c-2.6.1-4.4 1.6-5 4.1l-1.2 4.9c-.3 1.2.3 2.1 1.4 2.4l4.8 1.4"/><path d="M19.4 10.4c1 .8 1.6 2 1.6 3.3v4.6c0 1.4-1.1 2.5-2.5 2.5"/><path d="M18.6 19.8 11.9 13.4"/><path d="M11.9 16.2v2.3l3.2 1.7"/><path d="M4.6 9.8 3.4 11.6h2.2l-1.2 1.8"/><path d="M8.9 5.4 7.7 7.2h2.2l-1.2 1.8"/></svg>',
     soro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69s-5.5 6.24-5.5 10.19a5.5 5.5 0 0 0 11 0C17.5 8.93 12 2.69 12 2.69Z"/></svg>',
     falar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
     outros: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
@@ -29,7 +29,8 @@
   // de prioridade do backend (ver enfermagem/priority.py::_tier), então a
   // cor mostrada ao paciente nunca diverge da prioridade real do chamado.
   // "Outros" não tem gravidade (é encaminhado para a Hotelaria) — usa a cor
-  // "hotelaria" e ícone de serviço em vez de emoji.
+  // "hotelaria" e ícone de serviço em vez de emoji. "cor" (opcional)
+  // sobrescreve só a cor do ícone, sem mudar a gravidade do chamado.
   const OPCOES_VISUAIS = {
     "Urgência": {
       "Não consigo respirar bem": { emoji: "😰", dica: "Dificuldade para respirar — chamamos AGORA", grav: "critica" },
@@ -40,11 +41,11 @@
       "Outra emergência": { emoji: "🚨", dica: "Qualquer outra situação grave — chamamos AGORA", grav: "critica" },
     },
     "Soro": {
-      "Está retornando sangue": { emoji: "🩸", dica: "Sangue voltando pelo equipo — avise a equipe", grav: "media" },
-      "Problema no acesso": { emoji: "⚠️", dica: "Acesso solto, dolorido ou vazando", grav: "media" },
-      "Acabou": { emoji: "💧", dica: "O soro do frasco já terminou", grav: "media" },
+      "Está retornando sangue": { emoji: "🩸", dica: "Sangue voltando pelo equipo — avise a equipe", grav: "media", cor: "vermelho" },
+      "Problema no acesso": { emoji: "⚠️", dica: "Acesso solto, dolorido ou vazando", grav: "media", cor: "laranja" },
+      "Acabou": { emoji: "💧", dica: "O soro do frasco já terminou", grav: "media", cor: "verde" },
       "Outro problema": { emoji: "❓", dica: "Qualquer outra dificuldade com o soro", grav: "media" },
-      "Está perto do fim": { emoji: "⏳", dica: "Ainda dá tempo, mas já avise a equipe", grav: "baixa" },
+      "Está perto do fim": { emoji: "⏳", dica: "Ainda dá tempo, mas já avise a equipe", grav: "baixa", cor: "verde" },
     },
     "Falar com Enfermagem": {
       "Dúvida sobre medicação": { emoji: "💊", dica: "Perguntas sobre remédios", grav: "baixa" },
@@ -263,7 +264,7 @@
         const v = visuais[texto] || {};
         const simbolo = v.icone ? (ICONES_SERVICO[v.icone] || "") : (v.emoji || "•");
         return `
-          <button type="button" class="opcao-dor grav-${v.grav || "media"}" data-opcao="${escapeHtml(texto)}">
+          <button type="button" class="opcao-dor grav-${v.grav || "media"}${v.cor ? ` cor-${v.cor}` : ""}" data-opcao="${escapeHtml(texto)}">
             <span class="rosto-dor" aria-hidden="true">${simbolo}</span>
             <span class="texto-dor">
               <strong>${escapeHtml(texto)}</strong>

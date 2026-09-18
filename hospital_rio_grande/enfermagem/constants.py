@@ -70,8 +70,8 @@ CATEGORIAS = {
         "descricao": "Problemas com o soro ou com o acesso venoso.",
         "opcoes": [
             ("Está retornando sangue", 75),
-            ("Acabou", 55),
             ("Problema no acesso", 65),
+            ("Acabou", 55),
             ("Está perto do fim", 20),
             ("Outro problema", 40),
         ],

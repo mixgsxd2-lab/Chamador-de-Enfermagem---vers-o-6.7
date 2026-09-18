@@ -45,6 +45,12 @@ class Config:
     # mitiga envio abusivo de corpos gigantes.
     MAX_CONTENT_LENGTH = 256 * 1024
 
+    # Dados fictícios de demonstração (Enfermagem + Hotelaria): inseridos
+    # automaticamente na inicialização SOMENTE se o banco não tiver nenhum
+    # chamado — ver dados_demo.py. Nunca apagam nada. Para um banco real,
+    # sem dados de teste, rode com DADOS_DEMO=0.
+    DADOS_DEMO = _env_bool("DADOS_DEMO", True)
+
     # Credenciais de teste da Central de Hotelaria (herdadas do sistema já
     # existente — ver hotelaria/routes.py).
     HOTELARIA_USUARIO_TESTE = os.environ.get("HOTELARIA_USUARIO", "admin")

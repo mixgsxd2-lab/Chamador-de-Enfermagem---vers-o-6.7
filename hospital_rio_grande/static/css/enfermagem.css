@@ -196,6 +196,12 @@
 .opcao-dor.grav-baixa .rosto-dor { background: var(--baixa-fundo); color: var(--baixa); }
 .opcao-dor.grav-hotelaria .rosto-dor { background: var(--hotelaria-fundo); color: var(--hotelaria); }
 
+/* Cor própria por opção (campo "cor" em OPCOES_VISUAIS) — mesmo estilo de
+   fundo pastel + anel suave da escala de Dor, sem alterar a gravidade. */
+.opcao-dor.cor-vermelho .rosto-dor { background: #fde0e2; border-color: #f2a0a6; }
+.opcao-dor.cor-laranja  .rosto-dor { background: #ffe1cf; border-color: #f7b98f; }
+.opcao-dor.cor-verde    .rosto-dor { background: #e3f7ee; border-color: #9fd9bd; }
+
 /* ==========================================================================
    Passo 2 (categorias) — versão "acessibilidade primeiro":
    ícones maiores, blocos mais altos, contraste alto.

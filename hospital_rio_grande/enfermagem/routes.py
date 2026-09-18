@@ -83,6 +83,12 @@ def dashboard():
     )
 
 
+@pages_bp.route("/dashboard/executivo")
+@login_requerido
+def dashboard_executivo():
+    return render_template("enfermagem/dashboard_executivo.html", andares=list(ANDARES.keys()))
+
+
 @pages_bp.route("/central")
 @login_requerido
 def central():

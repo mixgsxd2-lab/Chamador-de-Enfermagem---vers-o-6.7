@@ -490,3 +490,28 @@ mudanças: criação de chamados nas 5 categorias da Enfermagem e nos 5
 serviços da Hotelaria, ciclo completo assumir/andamento → finalizar →
 avaliar, guarda de duplicidade, login com limite de tentativas, dashboards
 e filtros com dados reais, e ausência de qualquer stack trace exposta.
+
+## Alterações — Dashboard Executivo e dados de demonstração
+
+- **Soro:** "Problema no acesso" agora vem antes de "Acabou" na tela do
+  paciente (ordem definida em `enfermagem/constants.py`).
+- **Dashboard Executivo** (`GET /enfermagem/dashboard/executivo`, botão
+  "Dashboard Executivo" no topo do Dashboard de Enfermagem). Visão
+  consolidada de **Enfermagem + Hotelaria**, somente leitura, atualizada a
+  cada 30 s: situação agora (ativos, críticos, acima do tempo, maior espera,
+  leitos com chamado), 8 indicadores com tendência de 14 dias e variação vs.
+  período anterior, alertas operacionais com cronômetro ao vivo, mapa de
+  leitos em tempo real, volume diário/horário, status, meta de tempo por
+  prioridade (média e P90), distribuição de espera, turnos, mapa de calor
+  dia × hora, categorias e motivos (Enfermagem), serviços, origem e
+  confirmação (Hotelaria), comparativo por andar, reincidência por leito,
+  satisfação/NPS, comentários e atividade recente. Filtros de período,
+  andar e módulo; exportação CSV, impressão/PDF e modo TV (tela cheia).
+  Dados vêm de `GET /api/enfermagem/painel-executivo` (`enfermagem/painel.py`).
+  Meta de referência da Hotelaria: 30 min até o início do atendimento.
+- **Dados fictícios de demonstração** (`dados_demo.py`): ~60 dias de
+  histórico + chamados ativos "de agora" nos dois módulos (prioridades,
+  status, tempos, avaliações, comentários, mensagens, encaminhamentos).
+  Inseridos automaticamente na inicialização **somente se o banco não tiver
+  nenhum chamado** — nunca apagam nada. `DADOS_DEMO=0` desliga.
+  `python dados_demo.py --ativos` acrescenta um novo lote de chamados ativos.

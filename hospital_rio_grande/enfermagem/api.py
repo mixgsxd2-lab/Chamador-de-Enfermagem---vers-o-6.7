@@ -562,6 +562,22 @@ def metricas():
     })
 
 
+@api_bp.route("/painel-executivo", methods=["GET"])
+@login_requerido
+def painel_executivo():
+    """Payload consolidado (Enfermagem + Hotelaria) do Dashboard Executivo —
+    ver enfermagem/painel.py. Somente leitura."""
+    from enfermagem.painel import montar_painel
+
+    periodo = request.args.get("periodo", "")
+    if periodo not in ("", "hoje", "7dias", "30dias"):
+        periodo = ""
+    andar = request.args.get("andar") or None
+    if andar and andar not in ANDARES:
+        return jsonify({"erro": "Andar inválido."}), 400
+    return jsonify(montar_painel(get_db(), periodo, andar))
+
+
 @api_bp.route("/opcoes", methods=["GET"])
 def opcoes():
     """Metadados fixos (andares/leitos e categorias/subopções), para o

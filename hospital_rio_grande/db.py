@@ -121,6 +121,12 @@ def init_db(app):
         db.executescript(SCHEMA)
         db.commit()
         _aplicar_migracoes(db)
+        if app.config.get("DADOS_DEMO"):
+            # Chamados fictícios de demonstração — só quando o banco ainda
+            # não tem NENHUM chamado; nunca apaga nada (ver dados_demo.py).
+            from dados_demo import popular_se_vazio
+            if popular_se_vazio(db):
+                app.logger.info("Banco vazio: dados de demonstração inseridos.")
         close_db()
     app.teardown_appcontext(close_db)
 
