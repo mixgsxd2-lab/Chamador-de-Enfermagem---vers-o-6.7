@@ -47,9 +47,9 @@ class Config:
 
     # Dados fictícios de demonstração (Enfermagem + Hotelaria): inseridos
     # automaticamente na inicialização SOMENTE se o banco não tiver nenhum
-    # chamado — ver dados_demo.py. Nunca apagam nada. Para um banco real,
+    # chamado — ver dados_demo.py. Nunca apagam nada. Desligado por padrão (DADOS_DEMO=1 liga). Para um banco real,
     # sem dados de teste, rode com DADOS_DEMO=0.
-    DADOS_DEMO = _env_bool("DADOS_DEMO", True)
+    DADOS_DEMO = _env_bool("DADOS_DEMO", False)
 
     # Credenciais de teste da Central de Hotelaria (herdadas do sistema já
     # existente — ver hotelaria/routes.py).
