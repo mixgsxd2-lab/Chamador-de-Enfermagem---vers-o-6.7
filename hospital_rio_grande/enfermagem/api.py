@@ -11,7 +11,7 @@ diferentes ao mesmo tempo. `PRAGMA journal_mode=WAL` (ver db.py) permite
 que essas escritas convivam com as leituras constantes da Central e da TV
 sem bloqueios.
 """
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from flask import Blueprint, abort, jsonify, request, session
 
@@ -19,6 +19,7 @@ from db import get_db
 from timeutils import (
     agora, para_texto, limite_periodo, janela_comparativa_anterior,
     agrupar_por_dia, agrupar_por_hora, duracao_minutos,
+    serie_periodo, inicio_janela_24h,
 )
 
 from enfermagem.auth import login_requerido
@@ -30,7 +31,7 @@ from enfermagem.constants import (
 )
 from enfermagem.models import ChamadoEnfermagem
 from enfermagem.serializers import chamado_to_dict
-from enfermagem.priority import calcular_prioridade, excedeu_sla
+from enfermagem.priority import calcular_prioridade, excedeu_sla, _tier
 
 from hotelaria.services import criar_chamado_hotelaria
 
@@ -53,6 +54,9 @@ LIMITE_SEGURANCA_LISTAGEM = 500
 # retry de rede, não uma segunda solicitação real — devolve o chamado já
 # existente em vez de criar outro.
 JANELA_DEDUPLICACAO_SEGUNDOS = 15
+
+# Ordem das faixas na fila da Central (ver `_preparar_lista`).
+ORDEM_FAIXA = {"critica": 0, "media": 1, "baixa": 2}
 
 
 def _row_para_chamado(row):
@@ -132,8 +136,10 @@ def _serializar_lista(chamados):
 
 def _preparar_lista(chamados, ordenar="prioridade"):
     """Ordena e serializa uma lista de chamados. `ordenar`:
-      - "prioridade" (padrão): ativos primeiro (maior pontuação primeiro),
-        finalizados depois (finalizados mais recentemente primeiro);
+      - "prioridade" (padrão): ativos primeiro — agrupados por faixa
+        (Crítico → Médio → Baixo) e, dentro de cada faixa, quem está
+        esperando há mais tempo primeiro; finalizados depois (finalizados
+        mais recentemente primeiro);
       - "recentes"/"antigos": por data de criação, ignorando status.
     A ordenação é sempre feita sobre objetos com datetime real, nunca sobre
     texto já formatado. A prioridade de cada chamado é calculada uma única
@@ -147,7 +153,7 @@ def _preparar_lista(chamados, ordenar="prioridade"):
     else:
         ativos = [par for par in pares if par[0].status != STATUS_FINALIZADO]
         finalizados = [par for par in pares if par[0].status == STATUS_FINALIZADO]
-        ativos.sort(key=lambda par: par[1]["score"], reverse=True)
+        ativos.sort(key=lambda par: (ORDEM_FAIXA.get(par[1]["tier"], len(ORDEM_FAIXA)), -par[1]["tempo_espera_min"]))
         finalizados.sort(key=lambda par: par[0].finalizado_em or par[0].criado_em, reverse=True)
         pares = ativos + finalizados
 
@@ -458,6 +464,28 @@ def dashboard_tv():
 # ---------------------------------------------------------------------------
 # Métricas / histórico / dashboard
 # ---------------------------------------------------------------------------
+def _serie_periodo(db, args, chamados):
+    """Série do gráfico "Chamados por período" (ver timeutils.serie_periodo).
+    Para "Hoje", busca as últimas 24h com os mesmos filtros, exceto o
+    período (a janela de 24h pode começar antes da meia-noite)."""
+    datas_24h = []
+    if args.get("periodo") == "hoje":
+        clausulas, params = _construir_filtros(args, ignorar_periodo=True)
+        clausulas.append("criado_em >= ?")
+        params.append(para_texto(inicio_janela_24h()))
+        prioridade = args.get("prioridade")
+        for r in db.execute(
+            "SELECT criado_em, gravidade_base FROM enfermagem_chamados WHERE " + " AND ".join(clausulas), params
+        ).fetchall():
+            if prioridade and _tier(r["gravidade_base"]) != prioridade:
+                continue
+            datas_24h.append(datetime.fromisoformat(r["criado_em"]))
+    return serie_periodo(
+        args.get("periodo"), [c.criado_em for c in chamados], datas_24h,
+        (args.get("data_inicio") or "").strip(), (args.get("data_fim") or "").strip(),
+    )
+
+
 @api_bp.route("/metricas", methods=["GET"])
 @login_requerido
 def metricas():
@@ -503,6 +531,17 @@ def metricas():
         por_categoria[c["categoria"]] = por_categoria.get(c["categoria"], 0) + 1
         por_prioridade[c["prioridade"]] = por_prioridade.get(c["prioridade"], 0) + 1
         por_andar[c["andar"]] = por_andar.get(c["andar"], 0) + 1
+
+    # Chamados por andar, já separados por faixa de prioridade (gráfico
+    # "Chamados por andar" do Dashboard). Todos os andares aparecem, mesmo
+    # com zero, para a comparação entre eles ficar estável.
+    por_andar_prioridade = {
+        nome: {"critica": 0, "media": 0, "baixa": 0}
+        for nome in ANDARES if not request.args.get("andar") or nome == request.args.get("andar")
+    }
+    for c in serializados:
+        faixas = por_andar_prioridade.setdefault(c["andar"], {"critica": 0, "media": 0, "baixa": 0})
+        faixas[c["prioridade"]] = faixas.get(c["prioridade"], 0) + 1
 
     por_dia = agrupar_por_dia(c.criado_em for c in chamados)
     por_hora = agrupar_por_hora(c.criado_em for c in chamados)
@@ -556,26 +595,12 @@ def metricas():
         "por_categoria": por_categoria,
         "por_prioridade": por_prioridade,
         "por_andar": por_andar,
+        "por_andar_prioridade": por_andar_prioridade,
         "por_dia": por_dia,
         "por_hora": por_hora,
+        "serie_periodo": _serie_periodo(db, request.args, chamados),
         "comparativo_periodo_anterior": comparativo,
     })
-
-
-@api_bp.route("/painel-executivo", methods=["GET"])
-@login_requerido
-def painel_executivo():
-    """Payload consolidado (Enfermagem + Hotelaria) do Dashboard Executivo —
-    ver enfermagem/painel.py. Somente leitura."""
-    from enfermagem.painel import montar_painel
-
-    periodo = request.args.get("periodo", "")
-    if periodo not in ("", "hoje", "7dias", "30dias"):
-        periodo = ""
-    andar = request.args.get("andar") or None
-    if andar and andar not in ANDARES:
-        return jsonify({"erro": "Andar inválido."}), 400
-    return jsonify(montar_painel(get_db(), periodo, andar))
 
 
 @api_bp.route("/opcoes", methods=["GET"])

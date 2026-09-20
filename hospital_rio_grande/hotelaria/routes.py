@@ -22,12 +22,12 @@ from flask import (
 from db import get_db, nova_conexao_standalone
 from timeutils import (
     agora, para_texto, parse_dt, limite_periodo, janela_comparativa_anterior,
-    agrupar_por_dia, agrupar_por_hora,
+    agrupar_por_dia, agrupar_por_hora, serie_periodo, inicio_janela_24h,
 )
 from andares import ANDARES, leito_valido
 from ratelimit import permitido as rate_limit_permitido
 from hotelaria.models import (
-    SERVICOS,
+    SERVICOS, META_ESPERA_MIN,
     STATUS_PENDENTE, STATUS_ANDAMENTO, STATUS_FINALIZADO,
     CONFIRMACAO_PENDENTE, CONFIRMACAO_RESOLVIDO, CONFIRMACAO_NAO_RESOLVIDO,
     CONFIRMACAO_EXPIRADA, CONFIRMACAO_NA,
@@ -81,6 +81,16 @@ def _construir_filtros_dashboard(args, ignorar_periodo=False):
             if limite is not None:
                 clausulas.append("criado_em >= ?")
                 params.append(para_texto(limite))
+        # Intervalo manual (De/Até) — mesmo comportamento do Dashboard de
+        # Enfermagem.
+        data_inicio = (args.get("data_inicio") or "").strip()
+        data_fim = (args.get("data_fim") or "").strip()
+        if data_inicio:
+            clausulas.append("criado_em >= ?")
+            params.append(f"{data_inicio} 00:00:00")
+        if data_fim:
+            clausulas.append("criado_em <= ?")
+            params.append(f"{data_fim} 23:59:59")
 
     return clausulas, params
 
@@ -130,7 +140,11 @@ def logout():
 # ---------------------------------------------------------------------------
 @hotelaria_pages.route("/paciente")
 def paciente():
-    return render_template("hotelaria/paciente.html", servicos=SERVICOS, andares=ANDARES)
+    # A área do paciente da Hotelaria deixou de existir: o paciente usa só a
+    # área do paciente da Enfermagem (a categoria "Outros" já encaminha os
+    # pedidos para a Hotelaria). Links/QR codes antigos continuam levando a
+    # pessoa para o lugar certo em vez de dar "página não encontrada".
+    return redirect(url_for("enfermagem_pages.paciente_inicio"))
 
 
 @hotelaria_pages.route("/central")
@@ -310,8 +324,8 @@ def api_criar_avaliacao(chamado_id):
 def api_central_resumo():
     """Contadores em tempo real para os cartões de estatística no topo da
     Central — mesmo papel do `/api/enfermagem/tv` da Enfermagem, mas com
-    métricas que fazem sentido para a Hotelaria (que não tem faixas de
-    prioridade/SLA): pendentes, em andamento, setor mais requisitado hoje, e
+    métricas que fazem sentido para a Hotelaria: pendentes, em andamento,
+    acima da meta de espera (30 min), setor mais requisitado hoje e
     finalizados hoje."""
     db = get_db()
     ativos = db.execute(
@@ -319,6 +333,9 @@ def api_central_resumo():
     ).fetchall()
     pendentes = sum(1 for c in ativos if c["status"] == STATUS_PENDENTE)
     andamento = sum(1 for c in ativos if c["status"] == STATUS_ANDAMENTO)
+    # Chamados ativos que passaram da meta de 30 min para serem assumidos
+    # (mesmo indicador "Acima do tempo esperado" da Central de Enfermagem).
+    acima_do_tempo = sum(1 for c in ativos if chamado_to_dict(c)["acima_do_tempo_esperado"])
 
     hoje_texto = para_texto(agora().replace(hour=0, minute=0, second=0, microsecond=0))
     finalizados_hoje = db.execute(
@@ -338,6 +355,8 @@ def api_central_resumo():
 
     return jsonify({
         "pendentes": pendentes,
+        "acima_do_tempo": acima_do_tempo,
+        "meta_espera_min": META_ESPERA_MIN,
         "andamento": andamento,
         "setor_mais_requisitado_hoje": setor_mais_requisitado_hoje,
         "finalizados_hoje": finalizados_hoje,
@@ -536,12 +555,37 @@ def api_dashboard_resumo():
 
     por_andar = {}
     chamados_sem_andar = 0
+    # Chamados por andar separados por status (gráfico "Chamados por andar",
+    # mesmo formato do Dashboard de Enfermagem, que separa por prioridade).
+    # Todos os andares aparecem, mesmo com zero.
+    filtro_andar = request.args.get("andar")
+    por_andar_status = {
+        nome: {"pendente": 0, "em_andamento": 0, "finalizado": 0}
+        for nome in ANDARES if not filtro_andar or nome == filtro_andar
+    }
     for c in linhas:
         valor_andar = c["andar"] if "andar" in c.keys() else None
         if valor_andar:
             por_andar[valor_andar] = por_andar.get(valor_andar, 0) + 1
+            faixa = por_andar_status.setdefault(valor_andar, {"pendente": 0, "em_andamento": 0, "finalizado": 0})
+            faixa[c["status"]] = faixa.get(c["status"], 0) + 1
         else:
             chamados_sem_andar += 1
+
+    # Série "Chamados por período" (ver timeutils.serie_periodo). Para
+    # "Hoje": últimas 24h com os mesmos filtros, exceto o período.
+    datas_24h = []
+    if request.args.get("periodo") == "hoje":
+        clausulas_24h, params_24h = _construir_filtros_dashboard(request.args, ignorar_periodo=True)
+        clausulas_24h.append("criado_em >= ?")
+        params_24h.append(para_texto(inicio_janela_24h()))
+        datas_24h = [parse_dt(r["criado_em"]) for r in db.execute(
+            "SELECT criado_em FROM hotelaria_chamados WHERE " + " AND ".join(clausulas_24h), params_24h
+        ).fetchall()]
+    serie = serie_periodo(
+        request.args.get("periodo"), datas_criacao, datas_24h,
+        (request.args.get("data_inicio") or "").strip(), (request.args.get("data_fim") or "").strip(),
+    )
 
     # Comparativo com a janela equivalente imediatamente anterior — mesmo
     # racional da Enfermagem (ver enfermagem/api.py::metricas): só calculado
@@ -580,7 +624,9 @@ def api_dashboard_resumo():
         "por_dia": por_dia,
         "por_hora": por_hora,
         "por_andar": por_andar,
+        "por_andar_status": por_andar_status,
         "chamados_sem_andar": chamados_sem_andar,
+        "serie_periodo": serie,
         "comparativo_periodo_anterior": comparativo,
     })
 

@@ -1,35 +1,33 @@
 (function () {
   "use strict";
 
-  const escapeHtml = HRG.escapeHtml;
+  // Mesmo sistema de dashboard da Enfermagem (static/js/enfermagem/dashboard.js):
+  // gráficos, cartões, seletor de período e chips de filtro vêm de
+  // static/js/dashboard_comum.js. Aqui só mudam os dados e os rótulos — a
+  // Hotelaria não tem faixa de prioridade, então as quebras são por status.
+  const D = HRGDashboard;
+  const P = D.PALETA;
   const formatarMinutos = HRG.formatarMinutos;
+
+  const FAIXAS_STATUS = [
+    { chave: "pendente", rotulo: "Pendente", cor: P[0], rodape: ["pendente", "pendentes"] },
+    { chave: "em_andamento", rotulo: "Em andamento" },
+    { chave: "finalizado", rotulo: "Finalizado" },
+  ];
 
   const filtros = {};
   const filtroBusca = document.getElementById("filtroBusca");
   const filtroServico = document.getElementById("filtroServico");
   const filtroStatus = document.getElementById("filtroStatus");
   const filtroAndar = document.getElementById("filtroAndar");
-  const filtroPeriodo = document.getElementById("filtroPeriodo");
+  const filtroDataInicio = document.getElementById("filtroDataInicio");
+  const filtroDataFim = document.getElementById("filtroDataFim");
   const filtrosAtivosEl = document.getElementById("filtrosAtivos");
-  const botaoFiltrosAvancados = document.getElementById("botaoFiltrosAvancados");
-  const painelFiltrosAvancados = document.getElementById("painelFiltrosAvancados");
 
-  if (botaoFiltrosAvancados && painelFiltrosAvancados) {
-    botaoFiltrosAvancados.addEventListener("click", () => {
-      const abrir = painelFiltrosAvancados.hidden;
-      painelFiltrosAvancados.hidden = !abrir;
-      botaoFiltrosAvancados.setAttribute("aria-expanded", String(abrir));
-    });
-  }
+  D.ligarPainelFiltros(document.getElementById("botaoFiltrosAvancados"), document.getElementById("painelFiltrosAvancados"));
+  document.getElementById("legendaAndar").innerHTML = D.legendaHtml(FAIXAS_STATUS);
 
-  function tendenciaHtml(comparativo) {
-    if (!comparativo) return "";
-    const delta = comparativo.delta_percentual;
-    let classe = "tendencia-neutra", seta = "→";
-    if (delta > 0) { classe = "tendencia-alta"; seta = "▲"; }
-    else if (delta < 0) { classe = "tendencia-baixa"; seta = "▼"; }
-    return `<span class="tendencia ${classe}">${seta} ${HRG.formatarPercentual(delta)}</span>`;
-  }
+  const TODOS_OS_CAMPOS = [filtroBusca, filtroServico, filtroStatus, filtroAndar, filtroDataInicio, filtroDataFim];
 
   async function carregar() {
     const params = new URLSearchParams();
@@ -38,113 +36,55 @@
     try {
       const { dados } = await HRG.fetchJSON(`/hotelaria/api/dashboard/resumo?${params.toString()}`);
       renderCartoes(dados);
-      renderGraficoServico(dados.por_servico);
-      renderGraficoPeriodo(dados.por_dia);
-      renderGraficoAndar(dados.por_andar, dados.chamados_sem_andar);
+      D.renderBarras(document.getElementById("graficoServico"),
+        Object.entries(dados.por_servico || {}).map(([rotulo, valor]) => ({ rotulo, valor })));
+      D.renderBarras(document.getElementById("graficoStatus"),
+        FAIXAS_STATUS.map((fx) => ({ rotulo: fx.rotulo, valor: (dados.por_status || {})[fx.chave] || 0, cor: fx.cor })));
+      D.renderPeriodo(document.getElementById("graficoPeriodo"), document.getElementById("subtituloPeriodo"), dados.serie_periodo);
+      D.renderEmpilhado(document.getElementById("graficoAndar"), dados.por_andar_status, FAIXAS_STATUS, "pendente");
+      if (dados.chamados_sem_andar) {
+        document.getElementById("graficoAndar").insertAdjacentHTML("beforeend",
+          `<p class="texto-suave" style="font-size:0.76rem; margin-top:8px;">+ ${dados.chamados_sem_andar} chamado(s) antigo(s) sem andar registrado.</p>`);
+      }
     } catch (e) {
       HRG.toast("Não foi possível atualizar o dashboard.", "erro");
     }
   }
 
   function renderCartoes(d) {
-    const cartoes = [
-      { rotulo: "Total de chamados", valor: d.total, destaque: true, extra: tendenciaHtml(d.comparativo_periodo_anterior) },
+    D.renderCartoes(document.getElementById("cartoesResumo"), [
+      { rotulo: "Total de chamados", valor: d.total, destaque: true, extra: D.tendenciaHtml(d.comparativo_periodo_anterior) },
       { rotulo: "Pendentes", valor: d.pendentes },
       { rotulo: "Em andamento", valor: d.andamento },
       { rotulo: "Finalizados", valor: d.finalizados },
-      { rotulo: "Tempo até ser assumido", valor: formatarMinutos(d.tempo_medio_espera_min) },
-      { rotulo: "Tempo de atendimento", valor: formatarMinutos(d.tempo_medio_atendimento_min) },
-    ];
-    document.getElementById("cartoesResumo").innerHTML = cartoes.map((c) => `
-      <div class="cartao-dash ${c.destaque ? "destaque" : ""}">
-        <div class="rotulo-dash">${c.rotulo}</div>
-        <div class="valor-dash">${c.valor}${c.extra || ""}</div>
-      </div>
-    `).join("");
-  }
-
-  function renderGraficoServico(porServico) {
-    const container = document.getElementById("graficoServico");
-    const entradas = Object.entries(porServico || {});
-    if (!entradas.length || entradas.every(([, v]) => v === 0)) {
-      container.innerHTML = `<div class="vazio-dash">Sem dados ainda</div>`;
-      return;
-    }
-    const max = Math.max(...entradas.map(([, v]) => v), 1);
-    container.innerHTML = entradas.map(([nome, valor]) => `
-      <div class="barra-grafico-linha">
-        <span class="rotulo-barra">${escapeHtml(nome)}</span>
-        <div class="trilha-barra"><div class="preenchimento-barra" style="width:${(valor / max) * 100}%"></div></div>
-        <span class="valor-barra">${valor}</span>
-      </div>
-    `).join("");
-  }
-
-  function renderGraficoPeriodo(porDia) {
-    const container = document.getElementById("graficoPeriodo");
-    const entradas = Object.entries(porDia || {});
-    if (!entradas.length) {
-      container.innerHTML = `<div class="vazio-dash">Sem dados ainda</div>`;
-      return;
-    }
-    const max = Math.max(...entradas.map(([, v]) => v), 1);
-    container.innerHTML = `
-      <div class="grafico-periodo">
-        ${entradas.map(([dia, valor]) => `
-          <div class="coluna-periodo">
-            <div class="barra-vertical" style="height:${Math.max((valor / max) * 100, 4)}%"></div>
-            <span class="legenda-periodo">${dia}</span>
-          </div>
-        `).join("")}
-      </div>
-    `;
-  }
-
-  function renderGraficoAndar(porAndar, semAndar) {
-    const container = document.getElementById("graficoAndar");
-    const entradas = Object.entries(porAndar || {});
-    if (!entradas.length) {
-      container.innerHTML = `<div class="vazio-dash">Sem dados ainda</div>`;
-      return;
-    }
-    const max = Math.max(...entradas.map(([, v]) => v), 1);
-    let html = entradas.map(([andar, valor]) => `
-      <div class="barra-grafico-linha">
-        <span class="rotulo-barra">${escapeHtml(andar)}</span>
-        <div class="trilha-barra"><div class="preenchimento-barra" style="width:${(valor / max) * 100}%"></div></div>
-        <span class="valor-barra">${valor}</span>
-      </div>
-    `).join("");
-    if (semAndar) {
-      html += `<p class="texto-suave" style="font-size:0.76rem; margin-top:8px;">+ ${semAndar} chamado(s) antigo(s) sem andar registrado.</p>`;
-    }
-    container.innerHTML = html;
+      { rotulo: "Tempo médio de espera", valor: formatarMinutos(d.tempo_medio_espera_min) },
+      { rotulo: "Tempo médio de atendimento", valor: formatarMinutos(d.tempo_medio_atendimento_min) },
+    ]);
   }
 
   // ---------------------------------------------------------------------
   // Filtros
   // ---------------------------------------------------------------------
   function renderFiltrosAtivos() {
-    const definicoes = [
+    D.renderFiltrosAtivos(filtrosAtivosEl, [
       { chave: "q", el: filtroBusca, rotulo: (v) => `Busca: "${v}"` },
-      { chave: "servico", el: filtroServico, ignorar: "todos", rotulo: () => `Serviço: ${filtroServico.selectedOptions[0].textContent}` },
-      { chave: "status", el: filtroStatus, ignorar: "todos", rotulo: () => `Status: ${filtroStatus.selectedOptions[0].textContent}` },
+      { chave: "servico", el: filtroServico, rotulo: () => `Serviço: ${filtroServico.selectedOptions[0].textContent}` },
+      { chave: "status", el: filtroStatus, rotulo: () => `Status: ${filtroStatus.selectedOptions[0].textContent}` },
       { chave: "andar", el: filtroAndar, rotulo: (v) => `Andar: ${v}` },
-      { chave: "periodo", el: filtroPeriodo, rotulo: () => filtroPeriodo.selectedOptions[0].textContent },
-    ];
-    const ativos = definicoes.filter((d) => d.el.value && d.el.value !== d.ignorar);
-    if (!ativos.length) { filtrosAtivosEl.innerHTML = ""; return; }
-    filtrosAtivosEl.innerHTML = ativos.map((d) => `
-      <span class="filtro-ativo-chip" data-chave="${d.chave}">${escapeHtml(d.rotulo(d.el.value))}<button type="button" aria-label="Remover filtro">✕</button></span>
-    `).join("");
-    filtrosAtivosEl.querySelectorAll(".filtro-ativo-chip button").forEach((botao) => {
-      botao.addEventListener("click", () => {
-        const chave = botao.parentElement.dataset.chave;
-        const def = definicoes.find((d) => d.chave === chave);
-        if (def) { def.el.value = def.ignorar || ""; delete filtros[chave]; }
-        renderFiltrosAtivos();
-        carregar();
-      });
+      { chave: "data_inicio", el: filtroDataInicio, rotulo: (v) => `De ${v}` },
+      { chave: "data_fim", el: filtroDataFim, rotulo: (v) => `Até ${v}` },
+    ], (chave) => {
+      delete filtros[chave];
+      renderFiltrosAtivos();
+      carregar();
+    });
+  }
+
+  function ligarFiltro(el, chave) {
+    el.addEventListener("change", () => {
+      filtros[chave] = el.value.trim ? el.value.trim() : el.value;
+      renderFiltrosAtivos();
+      carregar();
     });
   }
 
@@ -153,12 +93,23 @@
     renderFiltrosAtivos();
     carregar();
   }, 350));
-  [["servico", filtroServico], ["status", filtroStatus], ["andar", filtroAndar], ["periodo", filtroPeriodo]].forEach(([chave, elemento]) => {
-    elemento.addEventListener("change", () => {
-      filtros[chave] = elemento.value;
-      renderFiltrosAtivos();
-      carregar();
-    });
+  ligarFiltro(filtroServico, "servico");
+  ligarFiltro(filtroStatus, "status");
+  ligarFiltro(filtroAndar, "andar");
+  ligarFiltro(filtroDataInicio, "data_inicio");
+  ligarFiltro(filtroDataFim, "data_fim");
+
+  const seletor = D.ligarSeletorPeriodo(document.getElementById("seletorPeriodo"), (valor) => {
+    if (valor) filtros.periodo = valor; else delete filtros.periodo;
+    carregar();
+  });
+
+  document.getElementById("botaoLimparFiltrosDash").addEventListener("click", () => {
+    TODOS_OS_CAMPOS.forEach((el) => { el.value = ""; });
+    Object.keys(filtros).forEach((chave) => delete filtros[chave]);
+    seletor.marcar("");
+    renderFiltrosAtivos();
+    carregar();
   });
 
   HRG.pollWhileVisible(carregar, 30000);

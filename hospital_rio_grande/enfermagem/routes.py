@@ -32,6 +32,18 @@ def paciente_inicio():
     )
 
 
+@pages_bp.route("/acompanhar-hotelaria/<int:chamado_id>")
+def acompanhar_hotelaria(chamado_id):
+    """Acompanhamento de um pedido de Hotelaria feito pelo paciente (categoria
+    "Outros") — vive aqui, na área do paciente da Enfermagem, no lugar da
+    antiga tela /hotelaria/paciente."""
+    db = get_db()
+    row = db.execute("SELECT id FROM hotelaria_chamados WHERE id = ?", (chamado_id,)).fetchone()
+    if row is None:
+        abort(404, description="Chamado não encontrado.")
+    return render_template("enfermagem/acompanhar_hotelaria.html", chamado_id=chamado_id)
+
+
 @pages_bp.route("/acompanhar/<int:chamado_id>")
 def acompanhar(chamado_id):
     db = get_db()
@@ -81,12 +93,6 @@ def dashboard():
         andares=list(ANDARES.keys()),
         categorias=list(CATEGORIAS.keys()),
     )
-
-
-@pages_bp.route("/dashboard/executivo")
-@login_requerido
-def dashboard_executivo():
-    return render_template("enfermagem/dashboard_executivo.html", andares=list(ANDARES.keys()))
 
 
 @pages_bp.route("/central")

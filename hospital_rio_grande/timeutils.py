@@ -132,3 +132,102 @@ def agrupar_por_hora(datas):
         if dt is not None:
             contagem[dt.hour] += 1
     return contagem
+
+
+# ---------------------------------------------------------------------------
+# Série do gráfico "Chamados por período" — compartilhada pelos Dashboards
+# de Enfermagem e Hotelaria. O agrupamento acompanha o filtro de período:
+#   hoje   → últimas 24 horas, por hora (janela móvel, não só desde 00h);
+#   7dias  → por dia;
+#   30dias → por semana (segunda a domingo, recortada ao período);
+#   tudo   → por mês.
+# Com intervalo manual (De/Até, sem atalho), o agrupamento segue a duração.
+# ---------------------------------------------------------------------------
+_MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+_DIAS_SEMANA = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
+
+
+def inicio_janela_24h():
+    """Início da janela "últimas 24 horas" usada pelo filtro Hoje do gráfico
+    (hora cheia de 23h atrás — 24 colunas, incluindo a hora atual)."""
+    return agora().replace(minute=0, second=0, microsecond=0) - timedelta(hours=23)
+
+
+def serie_periodo(periodo, datas, datas_24h=(), data_inicio="", data_fim=""):
+    """`datas`: datetimes de criação dos chamados já filtrados (inclusive
+    pelo período). `datas_24h`: datetimes das últimas 24h com os mesmos
+    filtros, exceto o período — só usado quando `periodo == "hoje"`."""
+    periodo = periodo or ""
+    if periodo == "hoje":
+        inicio = inicio_janela_24h()
+        contagem = [0] * 24
+        for d in datas_24h:
+            indice = int((d - inicio).total_seconds() // 3600)
+            if 0 <= indice < 24:
+                contagem[indice] += 1
+        pontos = []
+        for i, total in enumerate(contagem):
+            hora = inicio + timedelta(hours=i)
+            pontos.append({"rotulo": hora.strftime("%Hh"),
+                           "detalhe": f"{hora.strftime('%d/%m %H:00')}–{(hora + timedelta(hours=1)).strftime('%H:00')}",
+                           "total": total})
+        return {"granularidade": "hora", "descricao": "Últimas 24 horas, por hora", "pontos": pontos}
+
+    datas = [d for d in datas if d is not None]
+    hoje = agora().replace(hour=0, minute=0, second=0, microsecond=0)
+    inicio = limite_periodo(periodo)
+    fim = hoje
+    try:
+        if data_inicio:
+            d_ini = datetime.fromisoformat(data_inicio)
+            inicio = max(inicio, d_ini) if inicio else d_ini
+        if data_fim:
+            fim = min(fim, datetime.fromisoformat(data_fim))
+    except ValueError:
+        pass
+    if inicio is None:
+        if not datas:
+            return {"granularidade": "mes", "descricao": "Por mês", "pontos": []}
+        inicio = min(datas).replace(hour=0, minute=0, second=0, microsecond=0)
+    if fim < inicio:
+        fim = inicio
+
+    if periodo == "7dias":
+        granularidade = "dia"
+    elif periodo == "30dias":
+        granularidade = "semana"
+    elif periodo or not (data_inicio or data_fim):
+        granularidade = "mes"
+    else:
+        dias = (fim - inicio).days + 1
+        granularidade = "dia" if dias <= 31 else "semana" if dias <= 120 else "mes"
+
+    grupos = []  # (inicio, fim exclusivo, rótulo, detalhe)
+    if granularidade == "dia":
+        dia = inicio
+        while dia <= fim:
+            grupos.append((dia, dia + timedelta(days=1), dia.strftime("%d/%m"),
+                           f"{_DIAS_SEMANA[dia.weekday()]}, {dia.strftime('%d/%m/%Y')}"))
+            dia += timedelta(days=1)
+        descricao = "Por dia"
+    elif granularidade == "semana":
+        segunda = inicio - timedelta(days=inicio.weekday())
+        while segunda <= fim:
+            ini = max(segunda, inicio)
+            ult = min(segunda + timedelta(days=6), fim)
+            grupos.append((ini, ult + timedelta(days=1), f"{ini.strftime('%d/%m')}–{ult.strftime('%d/%m')}",
+                           f"Semana de {ini.strftime('%d/%m')} a {ult.strftime('%d/%m/%Y')}"))
+            segunda += timedelta(days=7)
+        descricao = "Por semana (segunda a domingo)"
+    else:
+        mes = inicio.replace(day=1)
+        while mes <= fim:
+            proximo = (mes.replace(day=28) + timedelta(days=4)).replace(day=1)
+            grupos.append((mes, proximo, f"{_MESES[mes.month - 1]}/{mes.strftime('%y')}",
+                           f"{_MESES[mes.month - 1].capitalize()} de {mes.year}"))
+            mes = proximo
+        descricao = "Por mês"
+
+    pontos = [{"rotulo": rotulo, "detalhe": detalhe, "total": sum(1 for d in datas if ini <= d < fim_excl)}
+              for ini, fim_excl, rotulo, detalhe in grupos]
+    return {"granularidade": granularidade, "descricao": descricao, "pontos": pontos}

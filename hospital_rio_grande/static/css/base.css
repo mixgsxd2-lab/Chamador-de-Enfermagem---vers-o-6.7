@@ -48,6 +48,18 @@
   --hotelaria: #7c3aed;
   --hotelaria-fundo: #f1e9fe;
 
+  /* Paleta dos gráficos dos Dashboards (Enfermagem e Hotelaria): escala
+     de azuis derivada da cor de marca, do mais escuro (maior destaque) ao
+     mais claro — combina com o branco e o azul predominantes do hospital.
+     Lida pelo JS em static/js/dashboard_comum.js, então mudar aqui muda os
+     dois dashboards. */
+  --grafico-1: #1b3a5c;   /* azul-marinho: maior destaque (Crítico / Pendente) */
+  --grafico-2: #2f5f8f;
+  --grafico-3: #5c8fc4;   /* azul da marca (Médio / Em andamento) */
+  --grafico-4: #8db5de;
+  --grafico-5: #c2d8ee;   /* azul-claro: menor destaque (Baixo / Finalizado) */
+  --grafico-trilha: #eef3f9;
+
   --sucesso: #1f7a53;
   --atencao: #96660c;
   --perigo: #b3261e;
@@ -265,10 +277,13 @@ img, svg { max-width: 100%; }
 .selo-tempo-atrasado { background: var(--critica-fundo); color: var(--critica); }
 
 /* Badge de tendência (comparativo com o período anterior). */
-.tendencia { font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; }
-.tendencia-alta { color: var(--critica); }
-.tendencia-baixa { color: var(--sucesso); }
-.tendencia-neutra { color: var(--texto-suave); }
+.tendencia {
+  font-size: 0.74rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;
+  padding: 3px 8px; border-radius: 20px; background: var(--primaria-clara); color: var(--grafico-2);
+}
+.tendencia-alta { background: var(--primaria-suave); color: var(--grafico-1); }
+.tendencia-baixa { background: var(--primaria-clara); color: var(--grafico-2); }
+.tendencia-neutra { background: var(--grafico-trilha); color: var(--texto-suave); }
 
 /* ==========================================================================
    Login (compartilhado)
@@ -346,6 +361,49 @@ img, svg { max-width: 100%; }
 .tela-erro-caixa p { color: var(--texto-suave); margin-bottom: 22px; }
 
 /* ==========================================================================
+   Acompanhamento do chamado pelo paciente (Hotelaria E Enfermagem — mesmo
+   padrão visual nas duas telas): selo de status, trilha de etapas, resumo
+   e avaliação por estrelas.
+   ========================================================================== */
+/* Status do chamado */
+.cartao-status { background: var(--branco); border-radius: var(--raio); padding: 24px 20px; box-shadow: var(--sombra); margin-top: 10px; text-align: center; }
+.trilha-status { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 22px 0 6px; }
+.passo-status { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+.passo-status .bola {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--borda); color: var(--texto-suave);
+  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; border: 3px solid var(--fundo);
+}
+.passo-status.ativo .bola { background: var(--primaria); color: #fff; }
+.passo-status.concluido .bola { background: var(--sucesso); color: #fff; }
+.passo-status span.rotulo-passo { font-size: 0.72rem; font-weight: 700; color: var(--texto-suave); text-align: center; }
+.passo-status.ativo span.rotulo-passo, .passo-status.concluido span.rotulo-passo { color: var(--texto); }
+.linha-status { flex: 0.5; height: 3px; background: var(--borda); margin-top: -22px; }
+.linha-status.preenchida { background: var(--sucesso); }
+
+.selo-status-grande { display: inline-block; padding: 8px 18px; border-radius: 30px; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px; }
+.selo-status-grande.pendente { background: var(--alta-fundo); color: var(--alta); }
+.selo-status-grande.em_andamento { background: var(--primaria-clara); color: var(--primaria); }
+.selo-status-grande.finalizado { background: var(--baixa-fundo); color: var(--baixa); }
+
+.resumo-chamado { text-align: left; background: var(--fundo); border-radius: 14px; padding: 14px 16px; margin-top: 16px; font-size: 0.88rem; color: var(--texto-suave); }
+.resumo-chamado b { color: var(--texto); }
+
+/* Avaliação com estrelas */
+.caixa-avaliacao { margin-top: 16px; background: var(--branco); border-radius: var(--raio); box-shadow: var(--sombra); padding: 20px; text-align: center; }
+.estrelas { display: flex; justify-content: center; gap: 8px; margin: 14px 0; }
+.estrelas button { background: none; border: none; font-size: 2rem; color: var(--borda); transition: transform .1s ease, color .1s ease; line-height: 1; min-width: var(--alvo-toque-min); min-height: var(--alvo-toque-min); }
+.estrelas button.ativa { color: #f2b90c; }
+.estrelas button:hover { transform: scale(1.15); }
+.caixa-avaliacao textarea { width: 100%; margin-top: 10px; border-radius: 12px; border: 1.5px solid var(--borda); padding: 12px; min-height: 70px; font-size: 0.88rem; }
+
+.mensagem-agradecimento { text-align: center; padding: 40px 20px; }
+.mensagem-agradecimento .icone-check {
+  width: 70px; height: 70px; border-radius: 50%; background: var(--baixa-fundo); color: var(--baixa);
+  display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
+}
+
+
+/* ==========================================================================
    Cabeçalho administrativo (Dashboard/Central/Histórico dos dois módulos)
    ========================================================================== */
 .app-admin { min-height: 100vh; }
@@ -386,34 +444,66 @@ img, svg { max-width: 100%; }
 .stat-central.acento-critica .valor { color: var(--critica); }
 .stat-central.acento-sucesso .valor { color: var(--sucesso); }
 
-/* Variante para cartões cujo "valor" é um nome (ex.: setor mais
-   requisitado), não um número — precisa de uma fonte menor para não
-   quebrar o layout do cartão com textos mais longos. */
-.stat-central .valor.valor-texto { font-size: 1.15rem; line-height: 1.25; }
+/* Todos os cartões no mesmo formato (valor grande + rótulo), inclusive os
+   que mostram um nome em vez de número (ex.: setor mais requisitado) —
+   nomes longos são cortados com reticências em vez de quebrar o cartão. */
+.stat-central .valor { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ==========================================================================
    Dashboard: cartões e gráficos de barra (compartilhado)
    ========================================================================== */
 .grade-cartoes-dash { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.cartao-dash { background: var(--branco); border-radius: 18px; padding: 20px; box-shadow: var(--sombra); }
+.cartao-dash {
+  background: var(--branco); border-radius: 18px; padding: 20px; box-shadow: var(--sombra);
+  border: 1px solid #e8eff7;
+}
 .cartao-dash .rotulo-dash { font-size: 0.78rem; color: var(--texto-suave); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
-.cartao-dash .valor-dash { font-size: 2rem; font-weight: 800; margin-top: 6px; color: var(--texto); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.cartao-dash.destaque .valor-dash { color: var(--primaria); }
+.cartao-dash .valor-dash { font-size: 2rem; font-weight: 800; margin-top: 6px; color: var(--grafico-1); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cartao-dash.destaque { background: linear-gradient(160deg, #ffffff 55%, var(--primaria-clara)); }
+.cartao-dash.destaque .valor-dash { color: var(--grafico-2); }
 .cartao-dash.acento-critica .valor-dash { color: var(--critica); }
 
 .grade-graficos { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; }
-.painel-grafico { background: var(--branco); border-radius: 18px; padding: 20px; box-shadow: var(--sombra); }
+.painel-grafico { background: var(--branco); border-radius: 18px; padding: 20px; box-shadow: var(--sombra); border: 1px solid #e8eff7; }
 .painel-grafico h3 { margin: 0 0 16px; font-size: 1rem; }
 .barra-grafico-linha { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .barra-grafico-linha .rotulo-barra { width: 130px; font-size: 0.82rem; font-weight: 600; color: var(--texto-suave); flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.barra-grafico-linha .trilha-barra { flex: 1; background: var(--fundo); border-radius: 8px; height: 14px; overflow: hidden; }
-.barra-grafico-linha .preenchimento-barra { height: 100%; background: linear-gradient(90deg, var(--primaria-suave), var(--primaria)); border-radius: 8px; }
+.barra-grafico-linha .trilha-barra { flex: 1; background: var(--grafico-trilha); border-radius: 8px; height: 14px; overflow: hidden; }
+.barra-grafico-linha .preenchimento-barra { height: 100%; background: linear-gradient(90deg, var(--grafico-4), var(--grafico-2)); border-radius: 8px; }
 .barra-grafico-linha .valor-barra { width: 32px; text-align: right; font-weight: 700; font-size: 0.82rem; flex-shrink: 0; }
 
 .grafico-periodo { display: flex; align-items: flex-end; gap: 6px; height: 160px; padding-top: 10px; }
 .coluna-periodo { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; justify-content: flex-end; height: 100%; min-width: 0; }
-.coluna-periodo .barra-vertical { width: 100%; background: linear-gradient(180deg, var(--primaria-suave), var(--primaria)); border-radius: 6px 6px 2px 2px; min-height: 4px; }
+.coluna-periodo .barra-vertical { width: 100%; background: linear-gradient(180deg, var(--grafico-3), var(--grafico-2)); border-radius: 6px 6px 2px 2px; min-height: 4px; }
+.coluna-periodo:hover .barra-vertical { background: linear-gradient(180deg, var(--grafico-2), var(--grafico-1)); }
 .coluna-periodo .legenda-periodo { font-size: 0.62rem; color: var(--texto-suave); white-space: nowrap; }
+
+/* Seletor de período do Dashboard (Hoje | 7 dias | 30 dias | Tudo). */
+.seletor-periodo {
+  display: inline-flex; background: var(--branco); border: 1.5px solid var(--borda); border-radius: 20px; padding: 3px; gap: 2px;
+  flex-wrap: wrap;
+}
+.seletor-periodo button {
+  border: none; background: transparent; min-height: 32px; padding: 6px 14px; border-radius: 16px;
+  font-size: 0.82rem; font-weight: 700; color: var(--texto-suave); white-space: nowrap;
+}
+.seletor-periodo button:hover { color: var(--texto); }
+.seletor-periodo button.ativo { background: var(--primaria); color: #fff; }
+
+.topo-painel-grafico { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.topo-painel-grafico h3 { margin: 0; }
+.subtitulo-grafico { font-size: 0.76rem; color: var(--texto-suave); font-weight: 600; }
+.legenda-mini { display: inline-flex; gap: 10px; font-size: 0.72rem; color: var(--texto-suave); font-weight: 600; flex-wrap: wrap; }
+.legenda-mini span { display: inline-flex; align-items: center; gap: 4px; }
+.legenda-mini i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+.coluna-periodo .valor-coluna { font-size: 0.66rem; font-weight: 800; color: var(--grafico-1); line-height: 1; }
+.grafico-periodo.poucas-colunas .coluna-periodo .barra-vertical { max-width: 64px; }
+.grafico-periodo.poucas-colunas .legenda-periodo { font-size: 0.72rem; font-weight: 700; }
+
+.barra-grafico-linha .trilha-barra.empilhada { display: flex; }
+.barra-grafico-linha .trilha-barra.empilhada i { display: block; height: 100%; }
+.andar-total { font-size: 0.72rem; color: var(--texto-suave); font-weight: 600; margin: -6px 0 12px 140px; }
 
 .vazio-dash { text-align: center; color: var(--texto-suave); padding: 40px; font-size: 0.88rem; }
 
@@ -459,19 +549,6 @@ img, svg { max-width: 100%; }
 }
 .barra-filtros-central { justify-content: flex-end; margin-bottom: 12px; }
 .barra-filtros-central .botao-filtros-avancados { margin-left: 0; }
-/* Botão de acesso ao Dashboard Executivo (Dashboard de Enfermagem). */
-.botao-dashboard-executivo {
-  min-height: 38px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 8px 7px 14px;
-  border-radius: 20px; background: linear-gradient(135deg, var(--primaria) 0%, var(--primaria-escura) 100%);
-  color: #fff; font-size: 0.82rem; font-weight: 800; box-shadow: 0 4px 12px rgba(74, 118, 163, .3);
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.botao-dashboard-executivo:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(74, 118, 163, .38); }
-.botao-dashboard-executivo svg { width: 16px; height: 16px; }
-.botao-dashboard-executivo .selo-novo {
-  background: rgba(255, 255, 255, .2); border-radius: 12px; padding: 3px 8px; font-size: 0.68rem; font-weight: 700;
-}
-@media (max-width: 420px) { .botao-dashboard-executivo .selo-novo { display: none; } }
 .painel-filtros-sempre-visivel { display: flex; }
 .campo-filtro { display: flex; flex-direction: column; gap: 6px; min-width: 150px; flex: 1 1 150px; }
 .campo-filtro label { font-size: 0.74rem; font-weight: 700; color: var(--texto-suave); text-transform: uppercase; }
@@ -622,6 +699,10 @@ img, svg { max-width: 100%; }
   .cartao-dash { padding: 14px; }
   .cartao-dash .valor-dash { font-size: 1.5rem; }
   .grade-graficos { grid-template-columns: 1fr; }
+  .barra-filtros-dashboard { align-items: stretch; }
+  .seletor-periodo { width: 100%; }
+  .seletor-periodo button { flex: 1; padding: 6px 8px; font-size: 0.76rem; }
+  .andar-total { margin-left: 0; }
 
   .painel-grafico { padding: 14px; }
   .barra-grafico-linha .rotulo-barra { width: 76px; font-size: 0.72rem; }

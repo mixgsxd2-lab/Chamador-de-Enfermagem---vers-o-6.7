@@ -97,6 +97,7 @@
     if (chamadoAbertoId) {
       const atualizado = chamados.find((c) => c.id === chamadoAbertoId);
       if (atualizado) renderModal(atualizado);
+      else if (!filtros.status) fecharModal(); // finalizado por outro profissional
     }
   }
 
@@ -200,6 +201,9 @@
   async function finalizar(id) {
     try {
       await HRG.fetchJSON(`/api/enfermagem/chamados/${id}/finalizar`, { method: "POST" });
+      // Finalizado = sai da Central (vai para o Histórico): fecha o
+      // detalhe na hora, sem o profissional precisar clicar em "✕".
+      fecharModal();
       HRG.toast("Atendimento finalizado.", "sucesso");
       await carregarTudo();
     } catch (err) {

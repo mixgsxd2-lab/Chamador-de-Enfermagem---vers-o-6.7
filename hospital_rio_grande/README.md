@@ -491,27 +491,84 @@ serviços da Hotelaria, ciclo completo assumir/andamento → finalizar →
 avaliar, guarda de duplicidade, login com limite de tentativas, dashboards
 e filtros com dados reais, e ausência de qualquer stack trace exposta.
 
-## Alterações — Dashboard Executivo e dados de demonstração
+## Alterações — dados de demonstração e ordem do Soro
 
 - **Soro:** "Problema no acesso" agora vem antes de "Acabou" na tela do
   paciente (ordem definida em `enfermagem/constants.py`).
-- **Dashboard Executivo** (`GET /enfermagem/dashboard/executivo`, botão
-  "Dashboard Executivo" no topo do Dashboard de Enfermagem). Visão
-  consolidada de **Enfermagem + Hotelaria**, somente leitura, atualizada a
-  cada 30 s: situação agora (ativos, críticos, acima do tempo, maior espera,
-  leitos com chamado), 8 indicadores com tendência de 14 dias e variação vs.
-  período anterior, alertas operacionais com cronômetro ao vivo, mapa de
-  leitos em tempo real, volume diário/horário, status, meta de tempo por
-  prioridade (média e P90), distribuição de espera, turnos, mapa de calor
-  dia × hora, categorias e motivos (Enfermagem), serviços, origem e
-  confirmação (Hotelaria), comparativo por andar, reincidência por leito,
-  satisfação/NPS, comentários e atividade recente. Filtros de período,
-  andar e módulo; exportação CSV, impressão/PDF e modo TV (tela cheia).
-  Dados vêm de `GET /api/enfermagem/painel-executivo` (`enfermagem/painel.py`).
-  Meta de referência da Hotelaria: 30 min até o início do atendimento.
 - **Dados fictícios de demonstração** (`dados_demo.py`): ~60 dias de
   histórico + chamados ativos "de agora" nos dois módulos (prioridades,
   status, tempos, avaliações, comentários, mensagens, encaminhamentos).
   Inseridos automaticamente na inicialização **somente se o banco não tiver
   nenhum chamado** — nunca apagam nada. `DADOS_DEMO=0` desliga.
   `python dados_demo.py --ativos` acrescenta um novo lote de chamados ativos.
+
+## Alterações — Dashboard por período, Central e ajustes do paciente
+
+- **Ícone de Limpeza** trocado por uma vassoura (Enfermagem › Outros e tela
+  do paciente da Hotelaria; chave `limpeza` em `hotelaria/models.py`).
+- **Falar com Enfermagem:** o paciente marca o assunto e confirma no botão
+  **Selecionar** (antes o chamado era enviado no primeiro toque). Continua
+  sem a tela de resumo.
+- **Dashboard de Enfermagem:** seletor fixo **Hoje | Últimos 7 dias |
+  Últimos 30 dias | Tudo**. "Chamados por período" muda o agrupamento
+  conforme o filtro: Hoje = últimas 24 horas por hora; 7 dias = por dia;
+  30 dias = por semana; Tudo = por mês (`serie_periodo` em
+  `GET /api/enfermagem/metricas`). Novo gráfico **Chamados por andar**,
+  separado por prioridade (`por_andar_prioridade`).
+- **Central de Enfermagem:** fila ordenada por faixa (Crítico → Médio →
+  Baixo) e, dentro da faixa, por maior tempo de espera.
+- **Centrais (Enfermagem e Hotelaria):** ao finalizar um chamado, o detalhe
+  fecha automaticamente (também quando outra pessoa finaliza enquanto ele
+  está aberto).
+
+## Alterações — paleta azul dos dashboards e Dashboard da Hotelaria no mesmo sistema
+
+- **Paleta dos gráficos** (`--grafico-1` … `--grafico-5` em `static/css/base.css`):
+  escala de azuis derivada da cor de marca, do azul-marinho ao azul-claro,
+  combinando com o branco e o azul do hospital. Prioridade e status seguem a
+  intensidade: Crítico/Pendente = mais escuro, Médio/Em andamento = azul da
+  marca, Baixo/Finalizado = azul-claro. Selo de tendência dos cartões em
+  tons de azul.
+- **Sistema de dashboard compartilhado** (`static/js/dashboard_comum.js`):
+  cartões, barras, "Chamados por período", "Chamados por andar" (empilhado),
+  seletor de período e chips de filtro usados pelos dois dashboards. A série
+  por período também é compartilhada (`timeutils.serie_periodo`).
+- **Dashboard da Hotelaria** agora igual ao da Enfermagem: seletor Hoje |
+  Últimos 7 dias | Últimos 30 dias | Tudo (24h por hora / dia / semana / mês),
+  filtros avançados (busca, serviço, status, andar, De/Até), gráficos por
+  serviço, por status, por período e por andar (separado por status).
+  `GET /hotelaria/api/dashboard/resumo` ganhou `data_inicio`/`data_fim`,
+  `serie_periodo` e `por_andar_status`.
+
+## Alterações — meta de 30 min na Hotelaria e acompanhamento padronizado
+
+- **Meta de espera de 30 minutos em todos os chamados da Hotelaria**
+  (`hotelaria/models.py::META_ESPERA_MIN`), no mesmo modelo das metas da
+  Enfermagem: cada chamado traz `tempo_espera_min`, `sla_min` e
+  `acima_do_tempo_esperado`. Na Central da Hotelaria, os cartões mostram o
+  selo "⏱ tempo / meta 30min" (normal, alerta a partir de 70% da meta,
+  vermelho acima da meta), o detalhe mostra o tempo de espera e o selo
+  "Acima do tempo esperado", há o novo contador "Acima do tempo esperado" e,
+  dentro de pendentes/em andamento, quem espera há mais tempo vem primeiro.
+- **Tela de acompanhamento da Enfermagem igual à da Hotelaria**: cabeçalho
+  com título e trilha, selo de status, trilha Recebido → Em atendimento →
+  Finalizado, resumo em caixa e avaliação no mesmo formato ("Sair sem
+  avaliar" como botão). Os estilos dessa tela agora ficam em `base.css`,
+  compartilhados pelos dois módulos. Corrigido também o "Sair sem avaliar",
+  que levava para um endereço inexistente (`/enfermagem/paciente`).
+
+## Alterações — fim da área do paciente da Hotelaria
+
+- A tela `/hotelaria/paciente` (e o fluxo próprio de abertura de chamado da
+  Hotelaria) foi removida; o paciente usa só a área do paciente da
+  Enfermagem (`/enfermagem/`), e a categoria **Outros** continua enviando os
+  pedidos para a Central de Hotelaria. Quem abrir o endereço antigo
+  (`/hotelaria/paciente`, links ou QR codes já impressos) é levado para
+  `/enfermagem/`.
+- O acompanhamento de um pedido de Hotelaria agora é
+  `/enfermagem/acompanhar-hotelaria/<id>` (`templates/enfermagem/acompanhar_hotelaria.html`,
+  `static/js/hotelaria/acompanhar.js`), com o mesmo visual do acompanhamento
+  da Enfermagem. **Sair sem avaliar** (e "Voltar ao início" depois de avaliar)
+  volta para a área do paciente da Enfermagem, pronta para um novo chamado.
+- A área do paciente da Enfermagem retoma sozinha um pedido de Hotelaria em
+  aberto (ou finalizado e ainda sem avaliação) neste dispositivo.

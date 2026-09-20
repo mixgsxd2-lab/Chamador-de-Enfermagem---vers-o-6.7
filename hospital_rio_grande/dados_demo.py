@@ -6,7 +6,7 @@ semana e hora, prioridades, tempos de espera/atendimento, avaliações,
 comentários, mensagens da Hotelaria, encaminhamentos "Outros") mais um
 conjunto de chamados ATIVOS agora (pendentes e em atendimento, alguns já
 acima do tempo esperado) — para que todas as telas (Central, Histórico,
-Dashboard e Dashboard Executivo) mostrem uma experiência completa.
+Dashboards) mostrem uma experiência completa.
 
 Regras:
   • NUNCA apaga nada — só insere.
@@ -122,7 +122,7 @@ _PESO_HORA_ENF = [2, 1.4, 1.1, 1, 1.1, 1.6, 3.2, 5.4, 6.2, 5.5, 4.8, 4.6, 5.2, 4
                   5.6, 6.3, 6.1, 5.2, 3.9, 2.8]
 _PESO_HORA_HOT = [0.3, 0.2, 0.1, 0.1, 0.1, 0.3, 1.2, 3.2, 4.8, 5.2, 5.0, 5.6, 6.2, 4.8, 4.2, 4.0, 4.3, 4.8,
                   5.5, 5.2, 4.2, 2.8, 1.4, 0.6]
-_PESO_ANDAR = {"1º Andar": 0.9, "2º Andar": 1.25, "3º Andar": 1.0}
+_PESO_ANDAR = {"1º ANDAR — ONCOLOGIA": 0.9, "5º ANDAR — LEITOS": 1.25, "3º ANDAR — LEITOS": 1.0}
 
 
 def _escolher(rng, pares):
@@ -138,7 +138,7 @@ def _escolher(rng, pares):
 
 def _leito_aleatorio(rng, leitos_quentes):
     # ~30% dos chamados vêm de um pequeno grupo de leitos "reincidentes"
-    # (pacientes que chamam muito) — deixa o ranking de reincidência realista.
+    # (pacientes que chamam muito) — deixa a distribuição por leito mais realista.
     if rng.random() < 0.3:
         return rng.choice(leitos_quentes)
     andar = _escolher(rng, list(_PESO_ANDAR.items()))
@@ -298,20 +298,20 @@ def _lote_ativos(conn, rng, agora_ref):
     opc = {s: (c, s, g) for c, s, g, _p in _OPCOES_ENF}
     cenarios_enf = [
         # (subcategoria, minutos atrás, status, andar, leito)
-        ("Não consigo respirar bem", 3, "pendente", "2º Andar", "207"),
-        ("Dor no peito", 19, "pendente", "3º Andar", "304"),
-        ("Queda ou acidente no quarto", 9, "em_atendimento", "1º Andar", "110"),
-        ("Sangramento intenso", 6, "em_atendimento", "2º Andar", "211"),
-        ("Está retornando sangue", 47, "pendente", "2º Andar", "202"),
-        ("Problema no acesso", 22, "pendente", "3º Andar", "309"),
-        ("Acabou", 12, "pendente", "1º Andar", "103"),
-        ("Dor muito forte", 55, "pendente", "2º Andar", "205"),
-        ("Dor moderada", 16, "em_atendimento", "3º Andar", "301"),
-        ("Está perto do fim", 8, "pendente", "1º Andar", "107"),
-        ("Dúvida sobre medicação", 96, "pendente", "3º Andar", "312"),
-        ("Preciso de orientação", 31, "pendente", "2º Andar", "209"),
-        ("Dúvida sobre procedimento ou alta", 14, "em_atendimento", "1º Andar", "105"),
-        ("Assunto geral", 4, "pendente", "3º Andar", "306"),
+        ("Não consigo respirar bem", 3, "pendente", "5º ANDAR — LEITOS", "507 A"),
+        ("Dor no peito", 19, "pendente", "3º ANDAR — LEITOS", "315 A"),
+        ("Queda ou acidente no quarto", 9, "em_atendimento", "1º ANDAR — ONCOLOGIA", "110 A"),
+        ("Sangramento intenso", 6, "em_atendimento", "5º ANDAR — LEITOS", "511 A"),
+        ("Está retornando sangue", 47, "pendente", "5º ANDAR — LEITOS", "502 A"),
+        ("Problema no acesso", 22, "pendente", "3º ANDAR — LEITOS", "320"),
+        ("Acabou", 12, "pendente", "1º ANDAR — ONCOLOGIA", "103 A"),
+        ("Dor muito forte", 55, "pendente", "5º ANDAR — LEITOS", "505 A"),
+        ("Dor moderada", 16, "em_atendimento", "3º ANDAR — LEITOS", "316 A"),
+        ("Está perto do fim", 8, "pendente", "1º ANDAR — ONCOLOGIA", "107 A"),
+        ("Dúvida sobre medicação", 96, "pendente", "3º ANDAR — LEITOS", "312"),
+        ("Preciso de orientação", 31, "pendente", "5º ANDAR — LEITOS", "509 A"),
+        ("Dúvida sobre procedimento ou alta", 14, "em_atendimento", "1º ANDAR — ONCOLOGIA", "105 A"),
+        ("Assunto geral", 4, "pendente", "3º ANDAR — LEITOS", "318"),
     ]
     for sub, min_atras, estado, andar, leito in cenarios_enf:
         criado = agora_ref - timedelta(minutes=min_atras, seconds=rng.randint(0, 50))
@@ -322,14 +322,14 @@ def _lote_ativos(conn, rng, agora_ref):
         conn.execute(_SQL_ENF, valores)
 
     cenarios_hot = [
-        ("manutencao", 74, "pendente", "2º Andar", "204", "hotelaria"),
-        ("nutricao", 18, "pendente", "3º Andar", "303", "enfermagem"),
-        ("higienizacao", 7, "pendente", "1º Andar", "101", "hotelaria"),
-        ("lavanderia", 26, "em_andamento", "2º Andar", "210", "hotelaria"),
-        ("hotelaria", 41, "pendente", "3º Andar", "311", "enfermagem"),
-        ("manutencao", 35, "em_andamento", "1º Andar", "108", "hotelaria"),
-        ("nutricao", 5, "pendente", "2º Andar", "212", "hotelaria"),
-        ("higienizacao", 22, "em_andamento", "3º Andar", "307", "enfermagem"),
+        ("manutencao", 74, "pendente", "5º ANDAR — LEITOS", "504 A", "hotelaria"),
+        ("nutricao", 18, "pendente", "3º ANDAR — LEITOS", "313", "enfermagem"),
+        ("higienizacao", 7, "pendente", "1º ANDAR — ONCOLOGIA", "101 A", "hotelaria"),
+        ("lavanderia", 26, "em_andamento", "5º ANDAR — LEITOS", "510 A", "hotelaria"),
+        ("hotelaria", 41, "pendente", "3º ANDAR — LEITOS", "314", "enfermagem"),
+        ("manutencao", 35, "em_andamento", "1º ANDAR — ONCOLOGIA", "108 A", "hotelaria"),
+        ("nutricao", 5, "pendente", "5º ANDAR — LEITOS", "512 A", "hotelaria"),
+        ("higienizacao", 22, "em_andamento", "3º ANDAR — LEITOS", "319", "enfermagem"),
     ]
     for servico, min_atras, estado, andar, leito, origem in cenarios_hot:
         criado = agora_ref - timedelta(minutes=min_atras, seconds=rng.randint(0, 50))
@@ -351,8 +351,8 @@ def popular(conn, semente=2026):
     rng = random.Random(semente)
     agora_ref = agora()
     hoje = agora_ref.replace(hour=0, minute=0, second=0, microsecond=0)
-    leitos_quentes = [("2º Andar", "205"), ("2º Andar", "208"), ("3º Andar", "304"),
-                      ("1º Andar", "103"), ("3º Andar", "310"), ("2º Andar", "211")]
+    leitos_quentes = [("5º ANDAR — LEITOS", "505 A"), ("5º ANDAR — LEITOS", "508 A"), ("3º ANDAR — LEITOS", "315 A"),
+                      ("1º ANDAR — ONCOLOGIA", "103 A"), ("3º ANDAR — LEITOS", "321"), ("5º ANDAR — LEITOS", "511 A")]
 
     for dias_atras in range(DIAS_HISTORICO, -1, -1):
         dia = hoje - timedelta(days=dias_atras)

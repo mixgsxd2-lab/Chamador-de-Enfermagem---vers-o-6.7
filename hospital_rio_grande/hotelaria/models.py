@@ -9,7 +9,7 @@ paciente escolhe a opção "OUTROS".
 """
 import re
 
-from timeutils import parse_dt, formata_data_br, formata_hora, duracao_minutos
+from timeutils import parse_dt, formata_data_br, formata_hora, duracao_minutos, agora
 
 SERVICOS = {
     "hotelaria": {
@@ -35,7 +35,7 @@ SERVICOS = {
     "higienizacao": {
         "nome": "Higienização",
         "descricao": "Limpeza e desinfecção: limpeza de quarto e banheiro, reposição de papel higiênico e sabonete.",
-        "icone": "sparkles",
+        "icone": "limpeza",
     },
     "outros": {
         "nome": "Solicitação geral",
@@ -43,6 +43,12 @@ SERVICOS = {
         "icone": "help-circle",
     },
 }
+
+# Meta de tempo de espera (SLA) de TODOS os chamados da Hotelaria: minutos
+# desde a abertura até a equipe assumir o chamado. Mesmo papel das metas por
+# prioridade da Enfermagem (enfermagem/priority.py::SLA_MINUTOS) — a
+# Hotelaria não tem faixas de prioridade, então a meta é única.
+META_ESPERA_MIN = 30
 
 STATUS_PENDENTE = "pendente"
 STATUS_ANDAMENTO = "em_andamento"
@@ -85,7 +91,12 @@ def chamado_to_dict(row, mensagens=None, avaliacao_row=None, nao_lida=None):
     chamador já as tem em mãos)."""
     finalizado_em = parse_dt(row["finalizado_em"])
     criado_em = parse_dt(row["criado_em"])
+    iniciado_em = parse_dt(row["iniciado_em"])
     tempo_atendimento = duracao_minutos(criado_em, finalizado_em) if finalizado_em else None
+    # Tempo de espera = da abertura até ser assumido (ou até agora, se ainda
+    # pendente) — mesma definição da Enfermagem; não inclui o atendimento.
+    fim_espera = iniciado_em or finalizado_em or agora()
+    tempo_espera = duracao_minutos(criado_em, fim_espera) if criado_em else None
 
     dados = {
         "id": row["id"],
@@ -106,6 +117,9 @@ def chamado_to_dict(row, mensagens=None, avaliacao_row=None, nao_lida=None):
         "nao_lida": bool(nao_lida) if nao_lida is not None else False,
         "nao_resolvido": row["status"] != STATUS_FINALIZADO,
         "tempo_atendimento_min": tempo_atendimento,
+        "tempo_espera_min": tempo_espera,
+        "sla_min": META_ESPERA_MIN,
+        "acima_do_tempo_esperado": tempo_espera is not None and tempo_espera > META_ESPERA_MIN,
     }
     if mensagens is not None:
         dados["mensagens"] = mensagens

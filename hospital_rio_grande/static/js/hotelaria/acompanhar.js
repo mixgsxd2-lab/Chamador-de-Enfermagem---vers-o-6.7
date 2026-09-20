@@ -1,13 +1,17 @@
 (function () {
   "use strict";
 
-  // Mesmo padrão visual (e mesma estrutura de HTML/CSS) da tela de
-  // acompanhamento de pedidos da Hotelaria — ver static/js/hotelaria/acompanhar.js
-  // (renderStatus / renderAreaAvaliacao). Estilos em base.css.
+  // Acompanhamento, pelo paciente, de um pedido de Hotelaria (criado pela
+  // categoria "Outros" da área do paciente da Enfermagem). A antiga tela
+  // /hotelaria/paciente deixou de existir: o paciente entra e sai sempre
+  // pela área do paciente da Enfermagem (/enfermagem/).
   const tela = document.getElementById("telaAcompanhar");
   const subtitulo = document.getElementById("subtituloAcompanhar");
   const chamadoId = window.CHAMADO_ID;
   const escapeHtml = HRG.escapeHtml;
+  const LS_KEY = "rg_hospital_chamado_ativo";
+  const URL_INICIO = "/enfermagem/";
+
   let chamado = null;
   let estrelasSelecionadas = 0;
   let enviandoAvaliacao = false;
@@ -16,19 +20,16 @@
 
   const PASSOS = [
     { chave: "pendente", rotulo: "Recebido" },
-    { chave: "em_atendimento", rotulo: "Em atendimento" },
+    { chave: "em_andamento", rotulo: "Em andamento" },
     { chave: "finalizado", rotulo: "Finalizado" },
   ];
-  const ROTULO_STATUS = { pendente: "Pendente", em_atendimento: "Em atendimento", finalizado: "Finalizado" };
-  // Classe do selo grande: mesmas cores da Hotelaria ("em_andamento" lá é o
-  // equivalente de "em_atendimento" aqui).
-  const CLASSE_STATUS = { pendente: "pendente", em_atendimento: "em_andamento", finalizado: "finalizado" };
+  const ROTULO_STATUS = { pendente: "Pendente", em_andamento: "Em andamento", finalizado: "Finalizado" };
 
   const ICONE_CHECK = '<svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 
   async function buscar() {
     try {
-      const { dados } = await HRG.fetchJSON(`/api/enfermagem/chamados/${chamadoId}`);
+      const { dados } = await HRG.fetchJSON(`/hotelaria/api/chamados/${chamadoId}`);
       falhasSeguidas = 0;
       return dados;
     } catch (err) {
@@ -36,13 +37,8 @@
       if (err.status === 404) {
         tela.innerHTML = `<p class="texto-carregando">Chamado não encontrado.</p>`;
       } else if (!chamado) {
-        // Primeira carga já falhou por rede — não há nada anterior pra
-        // manter na tela, então mostra um estado dedicado em vez de deixar
-        // a tela em branco.
         tela.innerHTML = `<p class="texto-carregando">Não foi possível carregar o chamado. Verifique sua conexão.</p>`;
       } else if (falhasSeguidas >= 2) {
-        // Já havia um chamado carregado: mantém a última tela conhecida,
-        // só avisa que a atualização está falhando.
         mostrarAvisoSemConexao(true);
       }
       return null;
@@ -76,7 +72,7 @@
 
   function render() {
     if (!chamado) return;
-    subtitulo.textContent = `${chamado.categoria} · Leito ${chamado.leito}`;
+    subtitulo.textContent = `${chamado.servico_nome} · Leito ${chamado.leito}`;
 
     tela.innerHTML = `
       <p id="avisoSemConexao" class="banner-status banner-status-sem_conexao" hidden style="margin-bottom:12px;">
@@ -84,12 +80,11 @@
         <span>Sem conexão no momento — mostrando os últimos dados recebidos.</span>
       </p>
       <div class="cartao-status surgir">
-        <span class="selo-status-grande ${CLASSE_STATUS[chamado.status] || "pendente"}">${ROTULO_STATUS[chamado.status] || escapeHtml(chamado.status)}</span>
+        <span class="selo-status-grande ${chamado.status}">${ROTULO_STATUS[chamado.status] || escapeHtml(chamado.status)}</span>
         <div class="trilha-status">${trilhaHtml()}</div>
         <div class="resumo-chamado">
-          <div><b>Categoria:</b> ${escapeHtml(chamado.categoria)}</div>
-          <div><b>Solicitação:</b> ${escapeHtml(chamado.subcategoria)}</div>
-          ${chamado.detalhe ? `<div><b>Detalhe:</b> ${escapeHtml(chamado.detalhe)}</div>` : ""}
+          <div><b>Serviço:</b> ${escapeHtml(chamado.servico_nome)}</div>
+          <div><b>Solicitação:</b> ${escapeHtml(chamado.descricao_exibicao || chamado.descricao)}</div>
           <div><b>Aberto em:</b> ${chamado.criado_em}</div>
         </div>
       </div>
@@ -105,14 +100,16 @@
     if (!area) return;
     if (chamado.status !== "finalizado") { area.innerHTML = ""; return; }
 
-    if (chamado.avaliacao != null) {
+    if (chamado.tem_avaliacao) {
       area.innerHTML = `
         <div class="mensagem-agradecimento surgir">
           <div class="icone-check">${ICONE_CHECK}</div>
           <h3>Obrigado pela sua avaliação!</h3>
           <p style="color:var(--texto-suave);">Seu feedback ajuda a melhorar nosso atendimento.</p>
+          <a class="botao largo" href="${URL_INICIO}" id="linkNovoChamado" style="margin-top:16px;">Voltar ao início</a>
         </div>
       `;
+      document.getElementById("linkNovoChamado").addEventListener("click", liberarDispositivo);
       return;
     }
 
@@ -139,13 +136,16 @@
     document.getElementById("botaoSairSemAvaliar").addEventListener("click", sairSemAvaliar);
   }
 
-  // "Sair sem avaliar": libera o dispositivo (remove a referência do
-  // chamado ativo salva no navegador) e leva o paciente de volta à tela
-  // inicial, sem tocar em nada no banco. A avaliação é OPCIONAL — nunca
-  // pode bloquear o paciente de sair.
+  function liberarDispositivo() {
+    try { localStorage.removeItem(LS_KEY); } catch (e) {}
+  }
+
+  // "Sair sem avaliar": libera o dispositivo (só remove a referência local do
+  // chamado — o chamado continua salvo no servidor) e volta para a área do
+  // paciente da Enfermagem, pronta para um novo chamado.
   function sairSemAvaliar() {
-    try { localStorage.removeItem("rg_enfermagem_chamado_ativo"); } catch (e) {}
-    window.location.href = "/enfermagem/";
+    liberarDispositivo();
+    window.location.href = URL_INICIO;
   }
 
   async function enviarAvaliacao() {
@@ -159,12 +159,12 @@
     const botao = document.getElementById("botaoEnviarAvaliacao");
     await HRG.comBotaoTravado(botao, async () => {
       try {
-        const { dados } = await HRG.fetchJSON(`/api/enfermagem/chamados/${chamadoId}/avaliar`, {
+        await HRG.fetchJSON(`/hotelaria/api/chamados/${chamadoId}/avaliacao`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ avaliacao: estrelasSelecionadas, comentario }),
+          body: JSON.stringify({ estrelas: estrelasSelecionadas, comentario }),
         });
-        chamado = dados;
+        chamado.tem_avaliacao = true;
         detectorEstado(snapshot(chamado));
         renderAvaliacao();
       } catch (err) {
@@ -175,13 +175,11 @@
   }
 
   function snapshot(c) {
-    return `${c.status}|${c.avaliacao}|${c.detalhe}`;
+    return `${c.status}|${c.tem_avaliacao}`;
   }
 
-  // Atualização em quase tempo real por polling — sem depender de nenhuma
-  // biblioteca externa de WebSocket. Pausa quando a aba não está visível.
-  // Só redesenha quando algo visível mudou (status/avaliação), para não
-  // apagar as estrelas/comentário que o paciente estiver preenchendo.
+  // Atualização em quase tempo real por polling; só redesenha quando algo
+  // visível mudou, para não apagar as estrelas/comentário em preenchimento.
   HRG.pollWhileVisible(async () => {
     const dados = await buscar();
     if (dados) {
@@ -189,5 +187,5 @@
       mostrarAvisoSemConexao(false);
       if (detectorEstado(snapshot(chamado))) render();
     }
-  }, 5000);
+  }, 4000);
 })();

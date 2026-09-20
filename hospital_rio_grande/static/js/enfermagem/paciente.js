@@ -11,14 +11,14 @@
   const ICONE_CHECK = '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
 
   // Ícones de serviço usados na subopção "Outros" — mesmo SVG já usado pela
-  // Central de Hotelaria (ver static/js/hotelaria/paciente.js) para a tela
+  // Central de Hotelaria (ver static/js/hotelaria/central.js) para a tela
   // do paciente ficar visualmente consistente com quem vai atender.
   const ICONES_SERVICO = {
     bed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>',
     utensils: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h2a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>',
     shirt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23Z"/></svg>',
     wrench: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z"/></svg>',
-    sparkles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M5 5l2.5 2.5M16.5 16.5 19 19M3 12h4M17 12h4M5 19l2.5-2.5M16.5 7.5 19 5"/><circle cx="12" cy="12" r="3"/></svg>',
+    limpeza: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 22-1-4"/><path d="M19 13.99a1 1 0 0 0 1-1V12a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v.99a1 1 0 0 0 1 1"/><path d="M5 14h14l1.973 6.767A1 1 0 0 1 20 22H4a1 1 0 0 1-.973-1.233z"/><path d="m8 22 1-4"/></svg>',
   };
 
   // Emoji/ícone, dica curta e faixa de gravidade de cada subopção — dá às
@@ -58,7 +58,7 @@
       "Alimentação": { icone: "utensils", dica: "Refeição, lanche ou dieta especial", grav: "hotelaria" },
       "Roupa de cama / Enxoval": { icone: "shirt", dica: "Lençol, travesseiro ou toalhas", grav: "hotelaria" },
       "Manutenção do quarto": { icone: "wrench", dica: "Chuveiro, luz ou parte elétrica/hidráulica", grav: "hotelaria" },
-      "Limpeza do quarto ou banheiro": { icone: "sparkles", dica: "Limpeza ou higienização do quarto", grav: "hotelaria" },
+      "Limpeza do quarto ou banheiro": { icone: "limpeza", dica: "Limpeza ou higienização do quarto", grav: "hotelaria" },
     },
   };
 
@@ -89,6 +89,10 @@
   // paciente "perder" o chamado que acabou de enviar antes de clicar em
   // "Acompanhar chamado".
   const LS_ATIVO = "rg_enfermagem_chamado_ativo";
+  // Mesma ideia para pedidos de Hotelaria feitos por "Outros" (chave já
+  // usada antes pela tela /hotelaria/paciente, mantida para não perder o
+  // acompanhamento de quem já tinha um pedido aberto).
+  const LS_ATIVO_HOTELARIA = "rg_hospital_chamado_ativo";
 
   const el = {
     tela: document.getElementById("telaPaciente"),
@@ -232,6 +236,7 @@
     const dados = window.CATEGORIAS[state.categoria];
     const envioDireto = state.categoria === CATEGORIA_ENVIO_DIRETO;
     const eDor = state.categoria === "Dor";
+    state.subcategoria = "";
 
     let listaHtml;
     if (eDor) {
@@ -288,7 +293,7 @@
     el.tela.innerHTML = `
       <div class="cabecalho-passo">
         <h1>${escapeHtml(state.categoria)}</h1>
-        <p>${eDor ? "Toque no rosto que mostra como você está" : (envioDireto ? "Escolha o assunto — o chamado é enviado na hora" : "Escolha a opção que melhor descreve a situação")}</p>
+        <p>${eDor ? "Toque no rosto que mostra como você está" : (envioDireto ? "Escolha o assunto e toque em Selecionar — o chamado é enviado na hora" : "Escolha a opção que melhor descreve a situação")}</p>
       </div>
       ${listaHtml}
     `;
@@ -297,19 +302,25 @@
     const seletor = usaEscalaVisual ? ".opcao-dor" : ".opcao-subcategoria";
 
     if (envioDireto) {
-      // Sem passo de confirmação: a própria escolha da subopção já cria o
-      // chamado.
-      el.barra.innerHTML = "";
-      let enviando = false;
+      // Sem passo de confirmação: o paciente marca o assunto e toca em
+      // "Selecionar" — o chamado é criado nesse momento (evita envio
+      // acidental com um toque só, mas continua sem a tela de resumo).
+      el.barra.innerHTML = `<button class="botao botao-primario botao-bloco" id="botaoSelecionar" disabled>Selecionar</button>`;
+      const botaoSelecionar = document.getElementById("botaoSelecionar");
       el.tela.querySelectorAll(seletor).forEach((botao) => {
         botao.addEventListener("click", () => {
-          if (enviando) return;
-          enviando = true;
-          el.tela.querySelectorAll(seletor).forEach((b) => { b.disabled = true; });
+          el.tela.querySelectorAll(seletor).forEach((b) => b.classList.remove("selecionada"));
           botao.classList.add("selecionada");
           state.subcategoria = botao.dataset.opcao;
-          enviarChamado();
+          botaoSelecionar.disabled = false;
         });
+      });
+      botaoSelecionar.addEventListener("click", () => {
+        if (!state.subcategoria) return;
+        botaoSelecionar.disabled = true;
+        botaoSelecionar.textContent = "Enviando...";
+        el.tela.querySelectorAll(seletor).forEach((b) => { b.disabled = true; });
+        enviarChamado();
       });
       return;
     }
@@ -362,8 +373,8 @@
     enviandoChamado = true;
 
     // Existe apenas no fluxo com passo de confirmação (passo 4); no envio
-    // direto de "Falar com Enfermagem" (a partir do passo 3) não há botão
-    // — os próprios cartões de subopção já foram desabilitados.
+    // direto de "Falar com Enfermagem" o botão "Selecionar" do passo 3 já
+    // foi travado antes de chamar esta função.
     const botao = document.getElementById("botaoEnviar");
     if (botao) {
       botao.disabled = true;
@@ -438,16 +449,15 @@
         <div class="resumo-linha"><span>Serviço</span><b>${escapeHtml(dados.servico_nome)}</b></div>
       </div>
     `;
-    // Mesmo mecanismo de retomada já usado pela própria Hotelaria: grava
-    // apenas a REFERÊNCIA do chamado (id + leito) no localStorage deste
+    // Grava apenas a REFERÊNCIA do chamado (id + leito) no localStorage deste
     // dispositivo — o conteúdo do chamado em si sempre vem do banco de
-    // dados. A tela /hotelaria/paciente já sabe ler essa chave e retomar
-    // o acompanhamento automaticamente.
+    // dados. `iniciar()` usa isso para retomar o acompanhamento depois de um
+    // F5 / fechar-e-reabrir o navegador.
     try {
-      localStorage.setItem("rg_hospital_chamado_ativo", JSON.stringify({ id: dados.hotelaria_chamado_id, leito: dados.leito }));
+      localStorage.setItem(LS_ATIVO_HOTELARIA, JSON.stringify({ id: dados.hotelaria_chamado_id, leito: dados.leito }));
     } catch (e) {}
 
-    el.barra.innerHTML = `<a class="botao botao-primario botao-bloco" href="/hotelaria/paciente">Acompanhar solicitação</a>`;
+    el.barra.innerHTML = `<a class="botao botao-primario botao-bloco" href="/enfermagem/acompanhar-hotelaria/${dados.hotelaria_chamado_id}">Acompanhar solicitação</a>`;
   }
 
   // -------------------------------------------------------------------
@@ -478,6 +488,24 @@
       // já foi oferecida na própria tela de acompanhamento enquanto o
       // chamado estava ativo, e é sempre opcional.
       try { localStorage.removeItem(LS_ATIVO); } catch (e) {}
+    }
+
+    // Pedido de Hotelaria em aberto neste dispositivo (ou já finalizado, mas
+    // ainda sem avaliação): leva direto ao acompanhamento.
+    let salvoHotelaria = null;
+    try { salvoHotelaria = JSON.parse(localStorage.getItem(LS_ATIVO_HOTELARIA) || "null"); } catch (e) {}
+    if (salvoHotelaria && salvoHotelaria.id) {
+      try {
+        const resp = await fetch(`/hotelaria/api/chamados/${salvoHotelaria.id}`);
+        if (resp.ok) {
+          const chamado = await resp.json();
+          if (chamado.status !== "finalizado" || !chamado.tem_avaliacao) {
+            window.location.href = `/enfermagem/acompanhar-hotelaria/${chamado.id}`;
+            return;
+          }
+        }
+      } catch (e) {}
+      try { localStorage.removeItem(LS_ATIVO_HOTELARIA); } catch (e) {}
     }
 
     renderPasso1();

@@ -1,9 +1,9 @@
 /* ==========================================================================
    Hospital Rio Grande — Chamador de Enfermagem
-   Estilos ESPECÍFICOS deste módulo (fluxo do paciente, categorias, banner de
-   status, timeline de acompanhamento, avaliação). Tudo que é compartilhado
-   com a Hotelaria (tokens de cor, botões, cabeçalho admin, dashboard,
-   filtros, modal, login, portal) vive em base.css.
+   Estilos ESPECÍFICOS deste módulo (fluxo do paciente, categorias, escala
+   de dor). Tudo que é compartilhado com a Hotelaria (tokens de cor, botões,
+   cabeçalho admin, dashboard, filtros, modal, login, portal e a tela de
+   acompanhamento do chamado/avaliação) vive em base.css.
    ========================================================================== */
 @import url("base.css");
 
@@ -30,6 +30,12 @@
   display: flex; align-items: center; justify-content: center; color: #fff;
 }
 .botao-voltar svg { width: 18px; height: 18px; }
+/* Tela de acompanhamento: cabeçalho com título/subtítulo e trilha, no mesmo
+   padrão da tela de acompanhamento da Hotelaria (não fica fixo no topo). */
+.cabecalho-paciente.cabecalho-acompanhar { position: static; }
+.cabecalho-paciente h1 { font-size: 1.5rem; margin: 0 0 4px; }
+.cabecalho-paciente p { margin: 0; opacity: 0.9; font-size: 0.9rem; }
+.cabecalho-acompanhar .trilha-passos { margin-top: 14px; }
 .trilha-passos { display: flex; gap: 6px; }
 .trilha-passos span { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.3); }
 .trilha-passos span.ativo { background: #fff; }
@@ -121,34 +127,6 @@
 .cartao-passo h2 { font-size: 1.3rem; margin-bottom: 6px; }
 .cartao-passo .resumo-linha { text-align: left; }
 
-/* ---------- Banner de status (acompanhamento do paciente) — variantes de
-   cor específicas da Enfermagem; o "shell" genérico (.banner-status) e a
-   variante "sem conexão" (comum aos dois módulos) vivem em base.css. ---------- */
-.banner-status-pendente { background: var(--alta-fundo); color: var(--alta); }
-.banner-status-em_atendimento { background: var(--primaria-clara); color: var(--primaria); }
-.banner-status-finalizado { background: var(--baixa-fundo); color: var(--baixa); }
-
-/* ---------- Timeline de acompanhamento ---------- */
-.timeline-acompanhamento { display: flex; align-items: center; margin: 4px 0 18px; }
-.passo-timeline { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
-.passo-timeline span { font-size: 0.68rem; font-weight: 700; color: var(--texto-suave); text-align: center; width: 78px; }
-.bola-timeline {
-  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--borda); background: var(--branco);
-  display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: var(--texto-suave);
-}
-.passo-timeline.concluido .bola-timeline { background: var(--primaria); border-color: var(--primaria); color: #fff; }
-.passo-timeline.ativo .bola-timeline { border-color: var(--primaria); color: var(--primaria); box-shadow: 0 0 0 4px var(--primaria-clara); }
-.passo-timeline.ativo span, .passo-timeline.concluido span { color: var(--texto); }
-.linha-timeline { flex: 1; height: 2px; background: var(--borda); margin: 0 -6px 20px; }
-.linha-timeline.preenchida { background: var(--primaria); }
-
-/* ---------- Avaliação ---------- */
-.estrelas-selecao { display: flex; gap: 6px; justify-content: center; margin: 14px 0; }
-.estrelas-selecao button { background: none; border: none; font-size: 2rem; color: var(--borda); line-height: 1; padding: 6px; min-width: var(--alvo-toque-min); min-height: var(--alvo-toque-min); }
-.estrelas-selecao button.ativa { color: #f5b301; }
-.estrelas-exibicao { font-size: 1.8rem; color: #f5b301; text-align: center; }
-#comentarioAvaliacao { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--borda); min-height: 70px; resize: vertical; }
-
 /* ==========================================================================
    Escala de dor (Passo 3, categoria "Dor") — grande, colorida e com rostos
    para que o paciente possa escolher pela expressão facial, sem depender de
@@ -212,14 +190,3 @@
 .cartao-categoria .texto-categoria strong { font-size: 1.2rem; }
 .cartao-categoria .texto-categoria small { font-size: 0.9rem; }
 
-/* ==========================================================================
-   Botão "Sair sem avaliar" (bem visível, cor neutra e alvo grande)
-   ========================================================================== */
-.botao-sair-sem-avaliar {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; min-height: var(--alvo-toque-min); margin-top: 12px;
-  padding: 12px 20px; border-radius: 12px; border: none;
-  background: transparent; color: var(--texto-suave);
-  font-weight: 700; font-size: 0.92rem; text-decoration: underline;
-}
-.botao-sair-sem-avaliar:hover { color: var(--texto); }

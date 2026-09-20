@@ -2,6 +2,23 @@
   "use strict";
 
   const escapeHtml = HRG.escapeHtml;
+  const formatarMinutos = HRG.formatarMinutos;
+
+  // Meta de espera (30 min, ver hotelaria/models.py::META_ESPERA_MIN) —
+  // mesmo selo de tempo da Central de Enfermagem: normal, alerta a partir de
+  // 70% da meta e "atrasado" quando passa da meta.
+  const LIMIAR_ALERTA_SLA = 0.7;
+
+  function nivelTempoEspera(c) {
+    if (c.acima_do_tempo_esperado) return "atrasado";
+    if (c.status === "pendente" && c.sla_min && c.tempo_espera_min >= c.sla_min * LIMIAR_ALERTA_SLA) return "alerta";
+    return "ok";
+  }
+
+  function seloTempoEspera(c) {
+    const meta = c.sla_min != null ? ` <span class="meta-tempo">/ meta ${Math.round(c.sla_min)}min</span>` : "";
+    return `<span class="selo-tempo selo-tempo-${nivelTempoEspera(c)}">⏱ ${formatarMinutos(c.tempo_espera_min)}${meta}</span>`;
+  }
 
   // Central de Hotelaria mostra apenas chamados que ainda precisam de ação
   // (pendentes e em andamento). Finalizados vivem só na tela de Histórico.
@@ -34,6 +51,7 @@
       const { dados } = await HRG.fetchJSON("/hotelaria/api/central/resumo");
       document.getElementById("statPendentes").textContent = dados.pendentes;
       document.getElementById("statAndamento").textContent = dados.andamento;
+      document.getElementById("statAtrasados").textContent = dados.acima_do_tempo;
       document.getElementById("statSetorTop").textContent = dados.setor_mais_requisitado_hoje || "—";
       document.getElementById("statFinalizadosHoje").textContent = dados.finalizados_hoje;
     } catch (e) {
@@ -73,20 +91,16 @@
       lista.innerHTML = `<div class="estado-vazio">Nenhum chamado encontrado com estes filtros.</div>`;
       return;
     }
-    // Pendentes sempre à frente de em andamento (mesma prioridade visual da
-    // Central de Enfermagem: quem ainda não foi assumido aparece primeiro).
-    const pendentes = ativos.filter((c) => c.status === "pendente");
-    const andamento = ativos.filter((c) => c.status === "em_andamento");
+    // Pendentes sempre à frente de em andamento (quem ainda não foi assumido
+    // aparece primeiro) e, dentro de cada grupo, quem espera há mais tempo
+    // primeiro — mesmo critério da Central de Enfermagem.
+    const porEspera = (a, b) => (b.tempo_espera_min || 0) - (a.tempo_espera_min || 0);
+    const pendentes = ativos.filter((c) => c.status === "pendente").sort(porEspera);
+    const andamento = ativos.filter((c) => c.status === "em_andamento").sort(porEspera);
     lista.innerHTML = pendentes.concat(andamento).map(cartaoChamadoHtml).join("");
     lista.querySelectorAll(".cartao-chamado-admin").forEach((elCard) => {
       elCard.addEventListener("click", () => abrirModal(parseInt(elCard.dataset.id, 10)));
     });
-  }
-
-  function indicadoresHtml(c) {
-    const pontos = [];
-    if (c.nao_lida) pontos.push('<span class="ponto-indicador laranja" title="Nova mensagem"></span>');
-    return pontos.length ? `<span class="indicadores-cartao">${pontos.join("")}</span>` : "";
   }
 
   function cartaoChamadoHtml(c) {
@@ -100,8 +114,7 @@
         <div class="categoria-cartao-admin">${escapeHtml(c.descricao_exibicao || c.descricao)}</div>
         <div class="rodape-cartao-admin">
           <span class="selo-status selo-status-${c.status}">${escapeHtml(rotuloStatus(c.status))}</span>
-          <span>Aberto às ${c.criado_em}</span>
-          ${indicadoresHtml(c)}
+          ${seloTempoEspera(c)}
         </div>
       </button>
     `;
@@ -153,7 +166,7 @@
       modalChamado.innerHTML = `<p style="text-align:center; padding:40px;">Não foi possível carregar este chamado.</p>`;
       return;
     }
-    ultimoSnapshotModal = `${c.status}|${c.confirmacao_resolucao}|${c.tem_avaliacao}`;
+    ultimoSnapshotModal = `${c.status}|${c.confirmacao_resolucao}|${c.tem_avaliacao}|${c.acima_do_tempo_esperado}`;
 
     const confirmacaoTexto = {
       pendente: "Aguardando confirmação do paciente",
@@ -176,6 +189,7 @@
         <div>
           <h2 style="margin:0 0 4px;">Leito ${escapeHtml(c.leito)}</h2>
           <span class="servico-etiqueta">${escapeHtml(c.servico_nome)}</span>
+          ${c.acima_do_tempo_esperado ? `<span class="selo-atrasado" style="margin-left:6px;">Acima do tempo esperado</span>` : ""}
         </div>
         <button class="fechar-modal" id="botaoFecharModal" aria-label="Fechar">${ICONE_FECHAR}</button>
       </div>
@@ -187,6 +201,7 @@
         <div><b>Aberto em:</b> ${c.criado_em}</div>
         ${c.iniciado_em ? `<div><b>Assumido em:</b> ${c.iniciado_em}</div>` : ""}
         ${c.finalizado_em ? `<div><b>Finalizado em:</b> ${c.finalizado_em}</div>` : ""}
+        <div><b>Tempo de espera:</b> ${seloTempoEspera(c)}</div>
         ${c.status === "finalizado" ? `<div><b>Confirmação:</b> ${confirmacaoTexto}</div>` : ""}
       </div>
 
@@ -216,7 +231,14 @@
     if (!assumir) opcoes.body = JSON.stringify({ status: novoStatus });
     try {
       await HRG.fetchJSON(endpoint, opcoes);
-      await renderModal();
+      if (novoStatus === "finalizado") {
+        // Finalizado = sai da Central (vai para o Histórico): fecha o
+        // detalhe automaticamente.
+        fecharModal();
+        HRG.toast("Chamado finalizado.", "sucesso");
+      } else {
+        await renderModal();
+      }
       await Promise.all([carregarStats(), carregarChamados()]);
     } catch (err) {
       HRG.toast(err.message, "erro");
@@ -238,7 +260,12 @@
       } catch (e) {
         return;
       }
-      const snapshot = `${c.status}|${c.confirmacao_resolucao}|${c.tem_avaliacao}`;
+      if (c.status === "finalizado") {
+        // Finalizado por outra pessoa enquanto o detalhe estava aberto.
+        fecharModal();
+        return;
+      }
+      const snapshot = `${c.status}|${c.confirmacao_resolucao}|${c.tem_avaliacao}|${c.acima_do_tempo_esperado}`;
       if (snapshot !== ultimoSnapshotModal) {
         await renderModal();
       }

@@ -88,42 +88,8 @@
   background: linear-gradient(to top, var(--fundo) 70%, transparent);
 }
 
-/* Status do chamado */
-.cartao-status { background: var(--branco); border-radius: var(--raio); padding: 24px 20px; box-shadow: var(--sombra); margin-top: 10px; text-align: center; }
-.trilha-status { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 22px 0 6px; }
-.passo-status { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
-.passo-status .bola {
-  width: 36px; height: 36px; border-radius: 50%; background: var(--borda); color: var(--texto-suave);
-  display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; border: 3px solid var(--fundo);
-}
-.passo-status.ativo .bola { background: var(--primaria); color: #fff; }
-.passo-status.concluido .bola { background: var(--sucesso); color: #fff; }
-.passo-status span.rotulo-passo { font-size: 0.72rem; font-weight: 700; color: var(--texto-suave); text-align: center; }
-.passo-status.ativo span.rotulo-passo, .passo-status.concluido span.rotulo-passo { color: var(--texto); }
-.linha-status { flex: 0.5; height: 3px; background: var(--borda); margin-top: -22px; }
-.linha-status.preenchida { background: var(--sucesso); }
-
-.selo-status-grande { display: inline-block; padding: 8px 18px; border-radius: 30px; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px; }
-.selo-status-grande.pendente { background: var(--alta-fundo); color: var(--alta); }
-.selo-status-grande.em_andamento { background: var(--primaria-clara); color: var(--primaria); }
-.selo-status-grande.finalizado { background: var(--baixa-fundo); color: var(--baixa); }
-
-.resumo-chamado { text-align: left; background: var(--fundo); border-radius: 14px; padding: 14px 16px; margin-top: 16px; font-size: 0.88rem; color: var(--texto-suave); }
-.resumo-chamado b { color: var(--texto); }
-
-/* Avaliação com estrelas */
-.caixa-avaliacao { margin-top: 16px; background: var(--branco); border-radius: var(--raio); box-shadow: var(--sombra); padding: 20px; text-align: center; }
-.estrelas { display: flex; justify-content: center; gap: 8px; margin: 14px 0; }
-.estrelas button { background: none; border: none; font-size: 2rem; color: var(--borda); transition: transform .1s ease, color .1s ease; line-height: 1; min-width: var(--alvo-toque-min); min-height: var(--alvo-toque-min); }
-.estrelas button.ativa { color: #f2b90c; }
-.estrelas button:hover { transform: scale(1.15); }
-.caixa-avaliacao textarea { width: 100%; margin-top: 10px; border-radius: 12px; border: 1.5px solid var(--borda); padding: 12px; min-height: 70px; font-size: 0.88rem; }
-
-.mensagem-agradecimento { text-align: center; padding: 40px 20px; }
-.mensagem-agradecimento .icone-check {
-  width: 70px; height: 70px; border-radius: 50%; background: var(--baixa-fundo); color: var(--baixa);
-  display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
-}
+/* Status do chamado / avaliação: estilos em base.css (compartilhados com a
+   tela de acompanhamento da Enfermagem, que segue exatamente este padrão). */
 
 .indicador-passos { display: flex; gap: 6px; margin-top: 14px; }
 .indicador-passos span { flex: 1; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.3); }
@@ -162,9 +128,6 @@
 .acoes-cartao { display: flex; gap: 8px; margin-top: 10px; }
 .vazio-coluna { text-align: center; color: var(--texto-suave); font-size: 0.85rem; padding: 30px 10px; background: var(--branco); border-radius: 14px; border: 1.5px dashed var(--borda); }
 
-.indicadores-cartao { display: flex; align-items: center; gap: 6px; }
-.ponto-indicador { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px var(--branco); }
-.ponto-indicador.laranja { background: var(--alta); }
 
 .avaliacao-exibicao { display: flex; align-items: center; gap: 6px; color: #92720a; font-weight: 700; }
 
