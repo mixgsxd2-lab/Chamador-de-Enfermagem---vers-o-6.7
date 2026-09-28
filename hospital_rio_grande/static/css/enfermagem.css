@@ -96,9 +96,12 @@
   display: flex; align-items: center; justify-content: center;
 }
 .icone-categoria svg { width: 24px; height: 24px; }
-.texto-categoria { display: flex; flex-direction: column; gap: 2px; justify-content: center; }
+.texto-categoria { display: flex; flex-direction: column; gap: 2px; justify-content: center; min-width: 0; }
 .texto-categoria strong { font-size: 1.02rem; }
-.texto-categoria small { color: var(--texto-suave); font-size: 0.8rem; line-height: 1.3; }
+.texto-categoria small {
+  color: var(--texto-suave); font-size: 0.8rem; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 .cor-critica .icone-categoria { background: var(--critica-fundo); color: var(--critica); }
 .cor-critica { border-left: 4px solid var(--critica); }
@@ -200,14 +203,30 @@
 .cartao-categoria .texto-categoria strong { font-size: 1.08rem; }
 .cartao-categoria .texto-categoria small { font-size: 0.82rem; }
 
-/* Telas baixas (celulares menores): reduz ainda mais para garantir que as
-   5 categorias fiquem 100% visíveis sem rolar. */
-@media (max-height: 700px) {
-  .cabecalho-passo { margin-bottom: 12px; }
-  .cartao-categoria { padding: 10px 14px; min-height: 52px; gap: 12px; }
-  .cartao-categoria .icone-categoria { width: 42px; height: 42px; border-radius: 12px; }
-  .cartao-categoria .icone-categoria svg { width: 22px; height: 22px; }
-  .cartao-categoria .texto-categoria strong { font-size: 0.96rem; }
-  .cartao-categoria .texto-categoria small { font-size: 0.74rem; }
+/* Celular em pé, na prática quase todos os aparelhos (a barra de endereço
+   do navegador já come uma boa fatia da altura útil): reduz para garantir
+   que as 5 categorias, incluindo "Outros", fiquem 100% visíveis sem rolar. */
+@media (max-height: 840px) {
+  .cabecalho-passo { margin-bottom: 10px; }
+  .cabecalho-passo h1 { font-size: 1.4rem; }
+  .grade-categorias { gap: 8px; }
+  .cartao-categoria { padding: 10px 14px; min-height: 0; gap: 12px; }
+  .cartao-categoria .icone-categoria { width: 40px; height: 40px; border-radius: 12px; }
+  .cartao-categoria .icone-categoria svg { width: 20px; height: 20px; }
+  .cartao-categoria .texto-categoria strong { font-size: 0.94rem; }
+  .cartao-categoria .texto-categoria small { font-size: 0.72rem; }
+}
+
+/* Telas bem baixas (celulares pequenos ou modo paisagem): mais um degrau. */
+@media (max-height: 640px) {
+  .cabecalho-paciente { padding: 14px 20px 12px; }
+  .cabecalho-passo { margin-bottom: 6px; }
+  .cabecalho-passo h1 { font-size: 1.2rem; }
+  .cabecalho-passo p { font-size: 0.86rem; }
+  .cartao-categoria { padding: 8px 12px; gap: 10px; }
+  .cartao-categoria .icone-categoria { width: 34px; height: 34px; border-radius: 10px; }
+  .cartao-categoria .icone-categoria svg { width: 18px; height: 18px; }
+  .cartao-categoria .texto-categoria strong { font-size: 0.88rem; }
+  .cartao-categoria .texto-categoria small { font-size: 0.68rem; }
 }
 
