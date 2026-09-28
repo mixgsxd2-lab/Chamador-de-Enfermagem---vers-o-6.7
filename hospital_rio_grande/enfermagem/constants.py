@@ -92,7 +92,7 @@ CATEGORIAS = {
         "chave": "outros",
         "icone": "outros",
         "cor": "hotelaria",
-        "descricao": "Solicitações de hotelaria — encaminhadas para a equipe responsável.",
+        "descricao": "Hotelaria, nutrição, lavanderia, manutenção e higienização.",
         # Cada subopção de "Outros" é mapeada 1:1 para um serviço já existente
         # na Central de Hotelaria (hotelaria/models.py::SERVICOS). Nenhum
         # chamado desta categoria entra na fila de enfermagem.

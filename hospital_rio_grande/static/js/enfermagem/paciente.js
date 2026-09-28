@@ -33,12 +33,12 @@
   // sobrescreve só a cor do ícone, sem mudar a gravidade do chamado.
   const OPCOES_VISUAIS = {
     "Urgência": {
-      "Não consigo respirar bem": { emoji: "😰", dica: "Dificuldade para respirar — chamamos AGORA", grav: "critica" },
-      "Sangramento intenso": { emoji: "🩸", dica: "Sangramento visível — chamamos AGORA", grav: "critica" },
-      "Queda ou acidente no quarto": { emoji: "🤕", dica: "Você caiu ou se machucou — chamamos AGORA", grav: "critica" },
-      "Confusão mental ou desmaio": { emoji: "😵", dica: "Perda de consciência ou confusão — chamamos AGORA", grav: "critica" },
-      "Dor súbita e muito intensa": { emoji: "😖", dica: "Dor forte que começou de repente — chamamos AGORA", grav: "critica" },
-      "Outra emergência": { emoji: "🚨", dica: "Qualquer outra situação grave — chamamos AGORA", grav: "critica" },
+      "Não consigo respirar bem": { emoji: "😰", dica: "Dificuldade para respirar", grav: "critica" },
+      "Sangramento intenso": { emoji: "🩸", dica: "Sangramento visível", grav: "critica" },
+      "Queda ou acidente no quarto": { emoji: "🤕", dica: "Você caiu ou se machucou", grav: "critica" },
+      "Confusão mental ou desmaio": { emoji: "😵", dica: "Perda de consciência ou confusão", grav: "critica" },
+      "Dor súbita e muito intensa": { emoji: "😖", dica: "Dor forte que começou de repente", grav: "critica" },
+      "Outra emergência": { emoji: "🚨", dica: "Qualquer outra situação grave", grav: "critica" },
     },
     "Soro": {
       "Está retornando sangue": { emoji: "🩸", dica: "Sangue voltando pelo equipo — avise a equipe", grav: "media", cor: "vermelho" },
