@@ -261,3 +261,17 @@
   .botao-revogar-acesso { align-self: stretch; }
 }
 
+/* ==========================================================================
+   Configurações — Gerador de QR Code por Leito
+   ========================================================================== */
+.cartao-qrcode-leito { margin-bottom: 20px; }
+.selecao-qrcode-leito { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 4px; }
+.selecao-qrcode-leito .campo { flex: 1 1 200px; min-width: 200px; margin-bottom: 0; }
+.bloco-qrcode-leito-resultado { margin-top: 18px; }
+#avisoSemLeitoQrcode { text-align: left; padding: 0; margin-top: 4px; font-size: 0.85rem; }
+.botao-baixar-qrcode { display: inline-block; text-decoration: none; align-self: flex-start; }
+
+@media (max-width: 640px) {
+  .selecao-qrcode-leito { flex-direction: column; }
+}
+

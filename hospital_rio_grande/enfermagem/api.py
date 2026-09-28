@@ -641,14 +641,24 @@ def definir_status_leito_admin():
 # ---------------------------------------------------------------------------
 # Acesso da tela do Paciente (QR Code) — Configurações
 # ---------------------------------------------------------------------------
-def _url_acesso_paciente(token):
-    return url_for("enfermagem_pages.paciente_inicio", acesso=token, _external=True)
+def _url_acesso_paciente(token, andar=None, leito=None):
+    params = {"acesso": token}
+    if andar and leito:
+        params.update(andar=andar, leito=leito)
+    return url_for("enfermagem_pages.paciente_inicio", _external=True, **params)
 
 
 @api_bp.route("/acesso", methods=["GET"])
 @login_requerido
 def acesso_paciente_info():
-    return jsonify({"url": _url_acesso_paciente(obter_token())})
+    """Link/QR Code de acesso — genérico (card principal de Configurações)
+    ou, com `?andar=&leito=`, já apontando para um leito específico (ver
+    "Gerador de QR Code por Leito")."""
+    andar = (request.args.get("andar") or "").strip()
+    leito = (request.args.get("leito") or "").strip()
+    if andar and leito and not leito_valido(andar, leito):
+        return jsonify({"erro": "Andar ou leito inválido."}), 400
+    return jsonify({"url": _url_acesso_paciente(obter_token(), andar or None, leito or None)})
 
 
 @api_bp.route("/acesso/revogar", methods=["POST"])
