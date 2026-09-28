@@ -40,6 +40,17 @@ CREATE INDEX IF NOT EXISTS idx_enf_status ON enfermagem_chamados (status);
 CREATE INDEX IF NOT EXISTS idx_enf_leito ON enfermagem_chamados (leito);
 CREATE INDEX IF NOT EXISTS idx_enf_criado_em ON enfermagem_chamados (criado_em);
 
+-- Leitos desativados pela tela "Controle de Leitos" (Configurações). Um
+-- leito só aparece aqui enquanto estiver INATIVO — por padrão, todo leito
+-- cadastrado em `andares.py` está ativo, então a ausência de linha já
+-- significa "ativo" (evita ter que semear milhares de linhas "ativo=1").
+CREATE TABLE IF NOT EXISTS enfermagem_leitos_inativos (
+    andar TEXT NOT NULL,
+    leito TEXT NOT NULL,
+    desde TEXT NOT NULL,
+    PRIMARY KEY (andar, leito)
+);
+
 -- ---------------------------------------------------------------------
 -- Central de Hotelaria
 -- ---------------------------------------------------------------------

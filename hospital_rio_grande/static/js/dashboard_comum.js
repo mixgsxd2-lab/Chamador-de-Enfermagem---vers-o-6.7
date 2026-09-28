@@ -106,9 +106,10 @@ window.HRGDashboard = (function () {
         : "")).join("");
       const detalhe = faixas.map((fx) => `${fx.rotulo} ${f[fx.chave] || 0}`).join(", ");
       const fxDestaque = faixas.find((fx) => fx.chave === destaque);
+      const rotuloAndar = andar.replace(/\s*—\s*LEITOS\s*$/i, "");
       return `
-        <div class="barra-grafico-linha" title="${escapeHtml(andar)}: ${total} chamados (${escapeHtml(detalhe)})">
-          <span class="rotulo-barra">${escapeHtml(andar)}</span>
+        <div class="barra-grafico-linha" title="${escapeHtml(rotuloAndar)}: ${total} chamados (${escapeHtml(detalhe)})">
+          <span class="rotulo-barra">${escapeHtml(rotuloAndar)}</span>
           <div class="trilha-barra empilhada">${segmentos}</div>
           <span class="valor-barra">${total}</span>
         </div>

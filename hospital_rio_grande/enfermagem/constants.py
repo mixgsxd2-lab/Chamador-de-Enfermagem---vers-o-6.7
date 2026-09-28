@@ -26,7 +26,7 @@ enfermagem/api.py) e nunca entra na fila/priorização da enfermagem.
 # para não quebrar nenhum import já existente (`from enfermagem.constants
 # import ANDARES, leito_valido`) no restante do código.
 # ---------------------------------------------------------------------------
-from andares import ANDARES, leito_valido  # noqa: F401
+from andares import ANDARES, leito_valido, andar_label  # noqa: F401
 
 
 # ---------------------------------------------------------------------------

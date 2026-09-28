@@ -1,0 +1,45 @@
+{% extends "enfermagem/base.html" %}
+{% block titulo %}Configurações — Chamador de Enfermagem{% endblock %}
+
+{% block conteudo %}
+<div class="app-admin">
+  <header class="topo-admin">
+    <div class="marca-admin">
+      <img src="{{ url_for('static', filename='img/hotelaria-logo-icon.png') }}" alt="Hospital Rio Grande" class="selo-admin">
+      <div class="titulos-admin">
+        <h1>Configurações</h1>
+        <span>Hospital Rio Grande</span>
+      </div>
+    </div>
+    {% set pagina_ativa = 'configuracoes' %}
+    {% include "enfermagem/_nav_admin.html" %}
+  </header>
+
+  <div class="pagina-admin pagina-configuracoes">
+    <section class="cartao-config">
+      <div class="cabecalho-cartao-config">
+        <div>
+          <h2>Controle de Leitos</h2>
+          <p>Ative ou desative leitos. Um leito desativado some da tela do paciente e não pode receber novos chamados.</p>
+        </div>
+        <div class="resumo-leitos" id="resumoLeitos">
+          <span class="resumo-leitos-item"><b id="totalAtivos">0</b> ativos</span>
+          <span class="resumo-leitos-item resumo-leitos-inativos"><b id="totalInativos">0</b> inativos</span>
+        </div>
+      </div>
+
+      <div class="campo campo-busca-leito">
+        <input type="text" id="buscaLeito" placeholder="Buscar andar ou leito...">
+      </div>
+
+      <div id="listaAndares" class="lista-andares-config">
+        <p class="texto-carregando">Carregando leitos...</p>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/enfermagem/configuracoes.js') }}"></script>
+{% endblock %}
