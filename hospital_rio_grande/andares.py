@@ -306,3 +306,13 @@ def andar_do_leito(leito):
         if leito in leitos:
             return andar
     return None
+
+
+def andar_label(andar):
+    """Nome do andar para exibição ao usuário, sem o sufixo "— LEITOS".
+
+    O valor original (chave de `ANDARES`) continua sendo o identificador
+    usado internamente/salvo no banco; isto afeta só o texto mostrado."""
+    if not andar:
+        return andar
+    return andar.replace(' — LEITOS', '').strip()

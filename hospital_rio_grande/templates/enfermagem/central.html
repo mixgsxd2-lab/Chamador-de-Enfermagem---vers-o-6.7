@@ -11,12 +11,8 @@
         <span>Hospital Rio Grande</span>
       </div>
     </div>
-    <nav class="nav-admin">
-      <a href="{{ url_for('enfermagem_pages.dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('enfermagem_pages.central') }}" class="ativo">Central</a>
-      <a href="{{ url_for('enfermagem_pages.historico') }}">Histórico</a>
-      <a href="{{ url_for('enfermagem_pages.logout') }}" class="botao-sair">Sair</a>
-    </nav>
+    {% set pagina_ativa = 'central' %}
+    {% include "enfermagem/_nav_admin.html" %}
   </header>
 
   <div class="pagina-admin">
@@ -62,7 +58,7 @@
           <label for="filtroAndar">Andar</label>
           <select id="filtroAndar">
             <option value="">Todos os andares</option>
-            {% for andar in andares %}<option value="{{ andar }}">{{ andar }}</option>{% endfor %}
+            {% for andar in andares %}<option value="{{ andar }}">{{ andar|replace(' — LEITOS', '') }}</option>{% endfor %}
           </select>
         </div>
         <div class="campo-filtro">

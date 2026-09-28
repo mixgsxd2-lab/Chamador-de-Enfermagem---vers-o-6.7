@@ -29,6 +29,7 @@ from enfermagem.constants import (
     gravidade_da_opcao, servico_hotelaria_da_opcao,
     STATUS_PENDENTE, STATUS_EM_ATENDIMENTO, STATUS_FINALIZADO,
 )
+from enfermagem.leitos import leito_ativo, listar_leitos, definir_status_leito
 from enfermagem.models import ChamadoEnfermagem
 from enfermagem.serializers import chamado_to_dict
 from enfermagem.priority import calcular_prioridade, excedeu_sla, _tier
@@ -206,6 +207,8 @@ def criar_chamado():
 
     if not leito_valido(andar, leito):
         return jsonify({"erro": "Andar ou leito inválido."}), 400
+    if not leito_ativo(andar, leito):
+        return jsonify({"erro": "Este leito está desativado no momento."}), 400
     if not categoria_valida(categoria):
         return jsonify({"erro": "Categoria inválida."}), 400
     if not opcao_valida(categoria, subcategoria):
@@ -617,3 +620,24 @@ def opcoes():
         for nome, dados in CATEGORIAS.items()
     }
     return jsonify({"andares": ANDARES, "categorias": categorias_json})
+
+
+@api_bp.route("/leitos", methods=["GET"])
+@login_requerido
+def listar_leitos_admin():
+    """Todos os leitos com status ativo/inativo — usado pela tela
+    Configurações → Controle de Leitos."""
+    return jsonify({"andares": listar_leitos()})
+
+
+@api_bp.route("/leitos/status", methods=["POST"])
+@login_requerido
+def definir_status_leito_admin():
+    dados = request.get_json(silent=True) or {}
+    andar = (dados.get("andar") or "").strip()
+    leito = (dados.get("leito") or "").strip()
+    ativo = bool(dados.get("ativo"))
+
+    if not definir_status_leito(andar, leito, ativo):
+        return jsonify({"erro": "Andar ou leito inválido."}), 400
+    return jsonify({"andar": andar, "leito": leito, "ativo": ativo})

@@ -111,12 +111,22 @@
 
   const escapeHtml = HRG.escapeHtml;
 
+  // Nome do andar para exibição, sem o sufixo "— LEITOS" (o valor original
+  // continua sendo usado como chave/valor real do <select> e do chamado).
+  function labelAndar(andar) {
+    return (andar || "").replace(/\s*—\s*LEITOS\s*$/i, "");
+  }
+
   function definirPasso(numero) {
     state.passo = numero;
     el.trilha.forEach((span) => {
       span.classList.toggle("ativo", parseInt(span.dataset.passo, 10) <= numero);
     });
     el.botaoVoltar.style.visibility = numero === 1 ? "hidden" : "visible";
+    // Passo 2 não usa a barra inferior (a escolha já avança de tela) — sem
+    // essa classe, o espaço reservado para a barra sobraria embaixo e
+    // empurraria as 5 categorias para fora da tela em telas menores.
+    el.tela.classList.toggle("tela-sem-barra", numero === 2);
   }
 
   // -------------------------------------------------------------------
@@ -134,7 +144,7 @@
           <label for="selectAndar">Andar</label>
           <select id="selectAndar">
             <option value="" disabled selected>Selecione o andar</option>
-            ${Object.keys(window.ANDARES).map((a) => `<option value="${a}">${a}</option>`).join("")}
+            ${Object.keys(window.ANDARES).map((a) => `<option value="${a}">${escapeHtml(labelAndar(a))}</option>`).join("")}
           </select>
         </div>
         <div class="campo campo-ultimo">
@@ -198,12 +208,15 @@
     definirPasso(2);
     const botoes = CATEGORIAS_ORDEM.map((nome) => {
       const dados = window.CATEGORIAS[nome];
+      // Só "Outros" mantém a descrição: as demais categorias têm nomes
+      // autoexplicativos e ganham mais espaço em tela sem o texto extra.
+      const mostrarDescricao = nome === "Outros" && dados.descricao;
       return `
         <button type="button" class="cartao-categoria cor-${dados.cor}" data-categoria="${escapeHtml(nome)}">
           <span class="icone-categoria">${ICONES[dados.icone] || ""}</span>
           <span class="texto-categoria">
             <strong>${escapeHtml(nome)}</strong>
-            <small>${escapeHtml(dados.descricao)}</small>
+            ${mostrarDescricao ? `<small>${escapeHtml(dados.descricao)}</small>` : ""}
           </span>
         </button>
       `;
@@ -212,7 +225,7 @@
     el.tela.innerHTML = `
       <div class="cabecalho-passo">
         <h1>Como podemos ajudar?</h1>
-        <p>Leito ${escapeHtml(state.leito)} · ${escapeHtml(state.andar)}</p>
+        <p>Leito ${escapeHtml(state.leito)} · ${escapeHtml(labelAndar(state.andar))}</p>
       </div>
       <div class="grade-categorias surgir">${botoes}</div>
     `;
@@ -351,7 +364,7 @@
       </div>
       <div class="cartao-passo surgir">
         <div class="resumo-linha"><span>Leito</span><b>${escapeHtml(state.leito)}</b></div>
-        <div class="resumo-linha"><span>Andar</span><b>${escapeHtml(state.andar)}</b></div>
+        <div class="resumo-linha"><span>Andar</span><b>${escapeHtml(labelAndar(state.andar))}</b></div>
         <div class="resumo-linha"><span>Motivo</span><b>${escapeHtml(state.categoria)}</b></div>
         <div class="resumo-linha"><span>Solicitação</span><b>${escapeHtml(state.subcategoria)}</b></div>
       </div>

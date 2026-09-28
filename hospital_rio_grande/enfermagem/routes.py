@@ -5,6 +5,7 @@ from db import get_db
 from ratelimit import permitido as rate_limit_permitido
 from enfermagem.auth import login_requerido
 from enfermagem.constants import ANDARES, CATEGORIAS
+from enfermagem.leitos import andares_ativos, listar_leitos
 
 pages_bp = Blueprint("enfermagem_pages", __name__, url_prefix="/enfermagem")
 
@@ -27,7 +28,7 @@ def _categorias_publicas():
 def paciente_inicio():
     return render_template(
         "enfermagem/paciente.html",
-        andares=ANDARES,
+        andares=andares_ativos(),
         categorias=_categorias_publicas(),
     )
 
@@ -112,4 +113,13 @@ def historico():
         "enfermagem/historico.html",
         andares=list(ANDARES.keys()),
         categorias=list(CATEGORIAS.keys()),
+    )
+
+
+@pages_bp.route("/configuracoes")
+@login_requerido
+def configuracoes():
+    return render_template(
+        "enfermagem/configuracoes.html",
+        leitos_por_andar=listar_leitos(),
     )

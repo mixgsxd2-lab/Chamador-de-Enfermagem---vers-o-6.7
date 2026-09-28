@@ -233,7 +233,7 @@
   function renderFiltrosAtivos() {
     const rotulos = {
       q: (v) => `Busca: "${v}"`,
-      andar: (v) => `Andar: ${v}`,
+      andar: () => `Andar: ${filtroAndar.selectedOptions[0].textContent}`,
       leito: (v) => `Leito: ${v}`,
       categoria: (v) => `Tipo: ${v}`,
       periodo: (v) => ({ hoje: "Hoje", "7dias": "Últimos 7 dias", "30dias": "Últimos 30 dias" }[v] || v),

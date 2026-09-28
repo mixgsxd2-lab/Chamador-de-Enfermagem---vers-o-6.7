@@ -67,7 +67,7 @@
       { chave: "q", el: filtroBusca, rotulo: (v) => `Busca: "${v}"` },
       { chave: "status", el: filtroStatus, rotulo: () => `Status: ${filtroStatus.selectedOptions[0].textContent}` },
       { chave: "prioridade", el: filtroPrioridade, rotulo: () => `Prioridade: ${filtroPrioridade.selectedOptions[0].textContent}` },
-      { chave: "andar", el: filtroAndar, rotulo: (v) => `Andar: ${v}` },
+      { chave: "andar", el: filtroAndar, rotulo: () => `Andar: ${filtroAndar.selectedOptions[0].textContent}` },
       { chave: "categoria", el: filtroCategoria, rotulo: (v) => `Tipo: ${v}` },
       { chave: "data_inicio", el: filtroDataInicio, rotulo: (v) => `De ${v}` },
       { chave: "data_fim", el: filtroDataFim, rotulo: (v) => `Até ${v}` },
