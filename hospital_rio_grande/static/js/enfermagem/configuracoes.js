@@ -93,6 +93,7 @@
       andares = dados.andares;
       atualizarResumo();
       render(buscaLeito.value);
+      popularSelectAndarQrcode();
     } catch (e) {
       listaAndares.innerHTML = `<p class="texto-carregando">Não foi possível carregar os leitos.</p>`;
     }
@@ -148,9 +149,82 @@
         imagemQrcode.src = `${imagemQrcode.src.split("?")[0]}?t=${Date.now()}`;
         fecharModalRevogar();
         HRG.toast("Acesso revogado. Novo QR Code gerado — imprima e afixe nos leitos.", "sucesso");
+        // O QR Code por leito (se algum estiver selecionado) usava o token
+        // antigo — atualiza junto para não deixar a equipe imprimir um QR
+        // já revogado sem perceber.
+        atualizarQrcodeLeitoSelecionado();
       } catch (e) {
         HRG.toast(e.message || "Não foi possível revogar o acesso.", "erro");
       }
     })
   );
+
+  // ---------------------------------------------------------------------
+  // Gerador de QR Code por Leito
+  // ---------------------------------------------------------------------
+  const selectAndarQrcode = document.getElementById("selectAndarQrcode");
+  const selectLeitoQrcode = document.getElementById("selectLeitoQrcode");
+  const blocoQrcodeLeito = document.getElementById("blocoQrcodeLeito");
+  const avisoSemLeitoQrcode = document.getElementById("avisoSemLeitoQrcode");
+  const imagemQrcodeLeito = document.getElementById("imagemQrcodeLeito");
+  const linkQrcodeLeito = document.getElementById("linkQrcodeLeito");
+  const botaoCopiarLinkLeito = document.getElementById("botaoCopiarLinkLeito");
+  const botaoBaixarQrcodeLeito = document.getElementById("botaoBaixarQrcodeLeito");
+
+  function popularSelectAndarQrcode() {
+    selectAndarQrcode.innerHTML = `<option value="" selected>Selecione o andar</option>` +
+      andares.map((a) => `<option value="${escapeHtml(a.andar)}">${escapeHtml(a.andar_label)}</option>`).join("");
+  }
+
+  function popularSelectLeitoQrcode(nomeAndar) {
+    const grupo = andares.find((a) => a.andar === nomeAndar);
+    // Só leitos ATIVOS entram aqui: um leito desativado não recebe chamados
+    // mesmo que o paciente escaneie o QR Code (ver enfermagem/leitos.py),
+    // então gerar um QR Code pra ele só confundiria a equipe.
+    const leitosAtivos = grupo ? grupo.leitos.filter((l) => l.ativo) : [];
+    selectLeitoQrcode.disabled = leitosAtivos.length === 0;
+    selectLeitoQrcode.innerHTML = leitosAtivos.length
+      ? `<option value="" selected>Selecione o leito</option>` +
+        leitosAtivos.map((l) => `<option value="${escapeHtml(l.leito)}">Leito ${escapeHtml(l.leito)}</option>`).join("")
+      : `<option value="" selected>Nenhum leito ativo neste andar</option>`;
+  }
+
+  async function atualizarQrcodeLeitoSelecionado() {
+    const andar = selectAndarQrcode.value;
+    const leito = selectLeitoQrcode.value;
+    if (!andar || !leito) {
+      blocoQrcodeLeito.hidden = true;
+      avisoSemLeitoQrcode.hidden = false;
+      return;
+    }
+
+    const parametros = `andar=${encodeURIComponent(andar)}&leito=${encodeURIComponent(leito)}`;
+    try {
+      const { dados } = await HRG.fetchJSON(`/api/enfermagem/acesso?${parametros}`);
+      linkQrcodeLeito.value = dados.url;
+      imagemQrcodeLeito.src = `/enfermagem/configuracoes/qrcode.svg?${parametros}&t=${Date.now()}`;
+      botaoBaixarQrcodeLeito.href = imagemQrcodeLeito.src;
+      botaoBaixarQrcodeLeito.download = `qrcode-leito-${leito.replace(/\s+/g, "_")}.svg`;
+      avisoSemLeitoQrcode.hidden = true;
+      blocoQrcodeLeito.hidden = false;
+    } catch (e) {
+      HRG.toast(e.message || "Não foi possível gerar o QR Code deste leito.", "erro");
+    }
+  }
+
+  selectAndarQrcode.addEventListener("change", () => {
+    popularSelectLeitoQrcode(selectAndarQrcode.value);
+    atualizarQrcodeLeitoSelecionado();
+  });
+  selectLeitoQrcode.addEventListener("change", atualizarQrcodeLeitoSelecionado);
+
+  botaoCopiarLinkLeito.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(linkQrcodeLeito.value);
+      HRG.toast("Link copiado.", "sucesso");
+    } catch (e) {
+      linkQrcodeLeito.select();
+      HRG.toast("Selecione e copie o link manualmente.", "info");
+    }
+  });
 })();

@@ -5,6 +5,7 @@ from flask import Blueprint, Response, abort, current_app, flash, redirect, rend
 
 from db import get_db
 from ratelimit import permitido as rate_limit_permitido
+from andares import leito_valido as _leito_valido_andares
 from enfermagem.acesso import obter_token
 from enfermagem.auth import acesso_paciente_requerido, login_requerido
 from enfermagem.constants import ANDARES, CATEGORIAS
@@ -13,11 +14,16 @@ from enfermagem.leitos import andares_ativos, listar_leitos
 pages_bp = Blueprint("enfermagem_pages", __name__, url_prefix="/enfermagem")
 
 
-def url_acesso_paciente():
-    """URL completa (com o token de acesso atual) que o QR Code do leito
-    deve apontar — usada tanto para gerar o QR quanto para mostrar o link
-    em texto na tela de Configurações."""
-    return url_for("enfermagem_pages.paciente_inicio", acesso=obter_token(), _external=True)
+def url_acesso_paciente(andar=None, leito=None):
+    """URL completa (com o token de acesso atual) que o QR Code deve
+    apontar — usada tanto para gerar o QR quanto para mostrar o link em
+    texto na tela de Configurações. Quando `andar`/`leito` são passados
+    (QR Code impresso e afixado num leito específico), a tela do paciente
+    já abre com esse leito pré-selecionado (ver `paciente_inicio`)."""
+    params = {"acesso": obter_token()}
+    if andar and leito:
+        params.update(andar=andar, leito=leito)
+    return url_for("enfermagem_pages.paciente_inicio", _external=True, **params)
 
 
 def _categorias_publicas():
@@ -37,10 +43,19 @@ def _categorias_publicas():
 @pages_bp.route("/")
 @acesso_paciente_requerido
 def paciente_inicio():
+    # QR Code impresso e afixado NUM LEITO ESPECÍFICO (`?andar=...&leito=...`
+    # além do `?acesso=...` já validado pelo decorator): pula a tela de
+    # "escolha seu leito" e já abre direto em "como podemos ajudar?" — só
+    # quando o par andar/leito é realmente válido, claro.
+    andar = (request.args.get("andar") or "").strip()
+    leito = (request.args.get("leito") or "").strip()
+    leito_preenchido = {"andar": andar, "leito": leito} if _leito_valido_andares(andar, leito) else None
+
     return render_template(
         "enfermagem/paciente.html",
         andares=andares_ativos(),
         categorias=_categorias_publicas(),
+        leito_preenchido=leito_preenchido,
     )
 
 
@@ -140,13 +155,23 @@ def configuracoes():
 @pages_bp.route("/configuracoes/qrcode.svg")
 @login_requerido
 def qrcode_acesso_paciente():
-    """QR Code (SVG) do link atual da tela do paciente — para a equipe
-    imprimir e afixar no leito/quarto. Gerado na hora a cada acesso (nunca
-    salvo em disco) para sempre refletir o token vigente."""
+    """QR Code (SVG) do link atual — para a equipe imprimir e afixar no
+    leito/quarto. Gerado na hora a cada acesso (nunca salvo em disco) para
+    sempre refletir o token vigente. Aceita `?andar=...&leito=...` opcionais
+    para gerar o QR Code JÁ COM O LEITO daquele quarto (ver
+    `paciente_inicio`); sem eles, gera o QR Code genérico usado no card de
+    Configurações."""
     import qrcode
     import qrcode.image.svg
 
-    imagem = qrcode.make(url_acesso_paciente(), image_factory=qrcode.image.svg.SvgPathImage, box_size=10)
+    andar = (request.args.get("andar") or "").strip()
+    leito = (request.args.get("leito") or "").strip()
+    if not _leito_valido_andares(andar, leito):
+        andar = leito = None
+
+    imagem = qrcode.make(
+        url_acesso_paciente(andar, leito), image_factory=qrcode.image.svg.SvgPathImage, box_size=10,
+    )
     buffer = io.BytesIO()
     imagem.save(buffer)
     resposta = Response(buffer.getvalue(), mimetype="image/svg+xml")

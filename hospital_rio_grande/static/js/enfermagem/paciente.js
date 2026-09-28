@@ -521,6 +521,19 @@
       try { localStorage.removeItem(LS_ATIVO_HOTELARIA); } catch (e) {}
     }
 
+    // QR Code afixado num leito específico (`?andar=...&leito=...`,
+    // validado no backend — ver enfermagem/routes.py::paciente_inicio):
+    // pula a etapa "escolha seu leito" e já abre direto em "como podemos
+    // ajudar?", já que o próprio QR Code identifica o leito.
+    const leitoPreenchido = window.LEITO_PREENCHIDO;
+    if (leitoPreenchido && window.ANDARES[leitoPreenchido.andar] && window.ANDARES[leitoPreenchido.andar].includes(leitoPreenchido.leito)) {
+      state.andar = leitoPreenchido.andar;
+      state.leito = leitoPreenchido.leito;
+      try { localStorage.setItem(LS_ULTIMO_LEITO, JSON.stringify({ andar: state.andar, leito: state.leito })); } catch (e) {}
+      renderPasso2();
+      return;
+    }
+
     renderPasso1();
   }
 
