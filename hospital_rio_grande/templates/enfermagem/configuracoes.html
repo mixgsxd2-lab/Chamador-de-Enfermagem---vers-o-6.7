@@ -16,6 +16,28 @@
   </header>
 
   <div class="pagina-admin pagina-configuracoes">
+    <section class="cartao-config cartao-acesso-paciente">
+      <div class="cabecalho-cartao-config">
+        <div>
+          <h2>Acesso do Paciente (QR Code)</h2>
+          <p>A tela onde o paciente abre um chamado só pode ser acessada por meio deste QR Code — o link não funciona sozinho para quem não escaneou.</p>
+        </div>
+      </div>
+
+      <div class="bloco-qrcode-paciente">
+        <img src="{{ url_for('enfermagem_pages.qrcode_acesso_paciente') }}" alt="QR Code de acesso à tela do paciente" id="imagemQrcode" class="imagem-qrcode">
+        <div class="detalhes-qrcode-paciente">
+          <label for="linkAcessoPaciente">Link do QR Code</label>
+          <div class="campo-com-botao">
+            <input type="text" id="linkAcessoPaciente" value="{{ url_acesso_paciente }}" readonly>
+            <button type="button" class="botao botao-fantasma pequeno" id="botaoCopiarLink">Copiar</button>
+          </div>
+          <p class="texto-suave">Imprima o QR Code e afixe no leito/quarto. Qualquer pessoa que só tenha o link (sem escanear o QR Code) também precisa desse mesmo link — revogar o acesso invalida os dois ao mesmo tempo.</p>
+          <button type="button" class="botao botao-fantasma botao-revogar-acesso" id="botaoRevogarAcesso">Revogar acesso de todos os links atuais</button>
+        </div>
+      </div>
+    </section>
+
     <section class="cartao-config">
       <div class="cabecalho-cartao-config">
         <div>
@@ -36,6 +58,20 @@
         <p class="texto-carregando">Carregando leitos...</p>
       </div>
     </section>
+  </div>
+</div>
+
+<div class="fundo-modal" id="fundoModalRevogar">
+  <div class="modal-chamado-admin" id="modalRevogar" role="dialog" aria-modal="true" aria-label="Confirmar revogação de acesso">
+    <div class="modal-topo-admin">
+      <h2>Revogar acesso de todos os links atuais?</h2>
+      <button class="fechar-modal" id="botaoFecharModalRevogar" aria-label="Fechar">✕</button>
+    </div>
+    <p>Um novo QR Code será gerado agora. Todo QR Code impresso e todo link já compartilhado deixam de funcionar imediatamente — será preciso imprimir e afixar o novo QR Code nos leitos.</p>
+    <div class="linha-acoes-modal">
+      <button type="button" class="botao botao-fantasma" id="botaoCancelarRevogar">Cancelar</button>
+      <button type="button" class="botao perigo botao-confirmar-revogar" id="botaoConfirmarRevogar">Sim, revogar agora</button>
+    </div>
   </div>
 </div>
 {% endblock %}

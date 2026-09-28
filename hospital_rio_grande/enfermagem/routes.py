@@ -1,13 +1,23 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
+import io
+
+from flask import Blueprint, Response, abort, current_app, flash, redirect, render_template, request, session, url_for
 
 from db import get_db
 from ratelimit import permitido as rate_limit_permitido
-from enfermagem.auth import login_requerido
+from enfermagem.acesso import obter_token
+from enfermagem.auth import acesso_paciente_requerido, login_requerido
 from enfermagem.constants import ANDARES, CATEGORIAS
 from enfermagem.leitos import andares_ativos, listar_leitos
 
 pages_bp = Blueprint("enfermagem_pages", __name__, url_prefix="/enfermagem")
+
+
+def url_acesso_paciente():
+    """URL completa (com o token de acesso atual) que o QR Code do leito
+    deve apontar — usada tanto para gerar o QR quanto para mostrar o link
+    em texto na tela de Configurações."""
+    return url_for("enfermagem_pages.paciente_inicio", acesso=obter_token(), _external=True)
 
 
 def _categorias_publicas():
@@ -25,6 +35,7 @@ def _categorias_publicas():
 
 
 @pages_bp.route("/")
+@acesso_paciente_requerido
 def paciente_inicio():
     return render_template(
         "enfermagem/paciente.html",
@@ -122,4 +133,22 @@ def configuracoes():
     return render_template(
         "enfermagem/configuracoes.html",
         leitos_por_andar=listar_leitos(),
+        url_acesso_paciente=url_acesso_paciente(),
     )
+
+
+@pages_bp.route("/configuracoes/qrcode.svg")
+@login_requerido
+def qrcode_acesso_paciente():
+    """QR Code (SVG) do link atual da tela do paciente — para a equipe
+    imprimir e afixar no leito/quarto. Gerado na hora a cada acesso (nunca
+    salvo em disco) para sempre refletir o token vigente."""
+    import qrcode
+    import qrcode.image.svg
+
+    imagem = qrcode.make(url_acesso_paciente(), image_factory=qrcode.image.svg.SvgPathImage, box_size=10)
+    buffer = io.BytesIO()
+    imagem.save(buffer)
+    resposta = Response(buffer.getvalue(), mimetype="image/svg+xml")
+    resposta.headers["Cache-Control"] = "no-store"
+    return resposta

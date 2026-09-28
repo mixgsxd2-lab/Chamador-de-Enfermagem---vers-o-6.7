@@ -236,3 +236,28 @@
   .opcao-dor .texto-dor small { font-size: 0.74rem; }
 }
 
+/* ==========================================================================
+   Configurações — Acesso do Paciente (QR Code)
+   ========================================================================== */
+.cartao-acesso-paciente { margin-bottom: 20px; }
+.bloco-qrcode-paciente { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.imagem-qrcode {
+  width: 168px; height: 168px; padding: 10px; background: var(--branco);
+  border: 1px solid var(--borda); border-radius: 14px; flex-shrink: 0;
+}
+.detalhes-qrcode-paciente { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 10px; }
+.detalhes-qrcode-paciente label { font-size: 0.82rem; font-weight: 600; color: var(--texto-suave); }
+.campo-com-botao { display: flex; gap: 8px; }
+.campo-com-botao input {
+  flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--borda); font-size: 0.85rem; background: var(--fundo);
+}
+.botao-revogar-acesso { align-self: flex-start; color: var(--perigo); }
+#modalRevogar p { margin: 0 0 16px; color: var(--texto-suave); font-size: 0.92rem; }
+
+@media (max-width: 640px) {
+  .bloco-qrcode-paciente { flex-direction: column; align-items: center; text-align: center; }
+  .campo-com-botao { flex-direction: column; }
+  .botao-revogar-acesso { align-self: stretch; }
+}
+
