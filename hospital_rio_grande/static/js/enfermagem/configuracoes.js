@@ -99,4 +99,58 @@
   }
 
   carregar();
+
+  // ---------------------------------------------------------------------
+  // Acesso do Paciente (QR Code) — copiar link + revogar todos os acessos
+  // ---------------------------------------------------------------------
+  const imagemQrcode = document.getElementById("imagemQrcode");
+  const linkAcessoPaciente = document.getElementById("linkAcessoPaciente");
+  const botaoCopiarLink = document.getElementById("botaoCopiarLink");
+  const botaoRevogarAcesso = document.getElementById("botaoRevogarAcesso");
+  const fundoModalRevogar = document.getElementById("fundoModalRevogar");
+  const botaoFecharModalRevogar = document.getElementById("botaoFecharModalRevogar");
+  const botaoCancelarRevogar = document.getElementById("botaoCancelarRevogar");
+  const botaoConfirmarRevogar = document.getElementById("botaoConfirmarRevogar");
+
+  function abrirModalRevogar() {
+    fundoModalRevogar.classList.add("aberto");
+  }
+  function fecharModalRevogar() {
+    fundoModalRevogar.classList.remove("aberto");
+  }
+
+  botaoRevogarAcesso.addEventListener("click", abrirModalRevogar);
+  botaoFecharModalRevogar.addEventListener("click", fecharModalRevogar);
+  botaoCancelarRevogar.addEventListener("click", fecharModalRevogar);
+  fundoModalRevogar.addEventListener("click", (ev) => {
+    if (ev.target === fundoModalRevogar) fecharModalRevogar();
+  });
+  HRG.fecharComEsc(() => fundoModalRevogar.classList.contains("aberto"), fecharModalRevogar);
+
+  botaoCopiarLink.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(linkAcessoPaciente.value);
+      HRG.toast("Link copiado.", "sucesso");
+    } catch (e) {
+      linkAcessoPaciente.select();
+      HRG.toast("Selecione e copie o link manualmente.", "info");
+    }
+  });
+
+  botaoConfirmarRevogar.addEventListener("click", () =>
+    HRG.comBotaoTravado(botaoConfirmarRevogar, async () => {
+      try {
+        const { dados } = await HRG.fetchJSON("/api/enfermagem/acesso/revogar", { method: "POST" });
+        linkAcessoPaciente.value = dados.url;
+        // Cache-busting: mesma URL de sempre, mas o token mudou — sem o
+        // parâmetro extra o navegador poderia reaproveitar o QR antigo do
+        // cache em vez de buscar o novo.
+        imagemQrcode.src = `${imagemQrcode.src.split("?")[0]}?t=${Date.now()}`;
+        fecharModalRevogar();
+        HRG.toast("Acesso revogado. Novo QR Code gerado — imprima e afixe nos leitos.", "sucesso");
+      } catch (e) {
+        HRG.toast(e.message || "Não foi possível revogar o acesso.", "erro");
+      }
+    })
+  );
 })();

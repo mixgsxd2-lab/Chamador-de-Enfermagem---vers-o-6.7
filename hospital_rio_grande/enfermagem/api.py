@@ -11,9 +11,9 @@ diferentes ao mesmo tempo. `PRAGMA journal_mode=WAL` (ver db.py) permite
 que essas escritas convivam com as leituras constantes da Central e da TV
 sem bloqueios.
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from flask import Blueprint, abort, jsonify, request, session
+from flask import Blueprint, abort, jsonify, request, session, url_for
 
 from db import get_db
 from timeutils import (
@@ -22,7 +22,8 @@ from timeutils import (
     serie_periodo, inicio_janela_24h,
 )
 
-from enfermagem.auth import login_requerido
+from enfermagem.acesso import obter_token, revogar_acesso
+from enfermagem.auth import acesso_paciente_requerido, login_requerido
 from enfermagem.constants import (
     ANDARES, CATEGORIAS, CATEGORIA_OUTROS,
     leito_valido, categoria_valida, opcao_valida,
@@ -49,12 +50,6 @@ MAX_COMENTARIO = 300
 # ilimitado do histórico ao longo dos anos. Não se aplica a `metricas`, que
 # precisa do conjunto completo filtrado para calcular totais corretos.
 LIMITE_SEGURANCA_LISTAGEM = 500
-
-# Janela de deduplicação: um mesmo leito repetindo exatamente a mesma
-# categoria+subopção poucos segundos depois é quase sempre duplo-clique ou
-# retry de rede, não uma segunda solicitação real — devolve o chamado já
-# existente em vez de criar outro.
-JANELA_DEDUPLICACAO_SEGUNDOS = 15
 
 # Ordem das faixas na fila da Central (ver `_preparar_lista`).
 ORDEM_FAIXA = {"critica": 0, "media": 1, "baixa": 2}
@@ -177,25 +172,25 @@ def _preparar_lista(chamados, ordenar="prioridade"):
 # ---------------------------------------------------------------------------
 # Criação e consulta
 # ---------------------------------------------------------------------------
-def _chamado_duplicado_recente(andar, leito, categoria, subcategoria):
-    """Protege contra duplo-clique/retry de rede: se o MESMO leito acabou de
-    abrir um chamado idêntico há poucos segundos e ele ainda está pendente,
-    devolve esse chamado em vez de deixar criar um segundo. A garantia fica
-    no backend (não só desabilitando o botão no JS), então vale mesmo se o
-    paciente tiver duas abas abertas ou a rede reenviar a requisição."""
+def _chamado_ativo_no_leito(andar, leito):
+    """Regra "um chamado por vez": enquanto o leito já tiver um chamado
+    pendente ou em atendimento (qualquer categoria), uma nova tentativa de
+    abrir chamado não cria um segundo — devolve o chamado já em aberto. Além
+    de refletir o pedido do hospital (evita o mesmo leito acumular vários
+    chamados simultâneos), isso também cobre o caso de duplo-clique/retry de
+    rede que antes só era tratado dentro de uma janela de alguns segundos."""
     db = get_db()
-    limite = para_texto(agora() - timedelta(seconds=JANELA_DEDUPLICACAO_SEGUNDOS))
     row = db.execute(
         """SELECT * FROM enfermagem_chamados
-           WHERE andar = ? AND leito = ? AND categoria = ? AND subcategoria = ?
-             AND status = ? AND criado_em >= ?
+           WHERE andar = ? AND leito = ? AND status IN (?, ?)
            ORDER BY criado_em DESC LIMIT 1""",
-        (andar, leito, categoria, subcategoria, STATUS_PENDENTE, limite),
+        (andar, leito, STATUS_PENDENTE, STATUS_EM_ATENDIMENTO),
     ).fetchone()
     return _row_para_chamado(row)
 
 
 @api_bp.route("/chamados", methods=["POST"])
+@acesso_paciente_requerido
 def criar_chamado():
     dados = request.get_json(silent=True) or {}
 
@@ -239,9 +234,9 @@ def criar_chamado():
             "servico_nome": chamado_hotelaria["servico_nome"],
         }), 201
 
-    duplicado = _chamado_duplicado_recente(andar, leito, categoria, subcategoria)
-    if duplicado is not None:
-        payload = chamado_to_dict(duplicado)
+    chamado_ativo = _chamado_ativo_no_leito(andar, leito)
+    if chamado_ativo is not None:
+        payload = chamado_to_dict(chamado_ativo)
         payload["encaminhado_hotelaria"] = False
         payload["duplicado"] = True
         return jsonify(payload), 200
@@ -641,3 +636,26 @@ def definir_status_leito_admin():
     if not definir_status_leito(andar, leito, ativo):
         return jsonify({"erro": "Andar ou leito inválido."}), 400
     return jsonify({"andar": andar, "leito": leito, "ativo": ativo})
+
+
+# ---------------------------------------------------------------------------
+# Acesso da tela do Paciente (QR Code) — Configurações
+# ---------------------------------------------------------------------------
+def _url_acesso_paciente(token):
+    return url_for("enfermagem_pages.paciente_inicio", acesso=token, _external=True)
+
+
+@api_bp.route("/acesso", methods=["GET"])
+@login_requerido
+def acesso_paciente_info():
+    return jsonify({"url": _url_acesso_paciente(obter_token())})
+
+
+@api_bp.route("/acesso/revogar", methods=["POST"])
+@login_requerido
+def revogar_acesso_paciente():
+    """Gera um novo link/QR Code e invalida instantaneamente todos os
+    anteriores — qualquer pessoa que só tinha o link antigo (não o QR Code
+    novo) perde o acesso à tela do paciente."""
+    token = revogar_acesso()
+    return jsonify({"url": _url_acesso_paciente(token)})

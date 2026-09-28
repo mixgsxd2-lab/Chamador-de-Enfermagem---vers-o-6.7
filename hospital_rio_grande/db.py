@@ -51,6 +51,14 @@ CREATE TABLE IF NOT EXISTS enfermagem_leitos_inativos (
     PRIMARY KEY (andar, leito)
 );
 
+-- Configurações simples de chave/valor da Enfermagem — hoje guarda só o
+-- token de acesso da tela do paciente (ver enfermagem/acesso.py), mas fica
+-- genérica para não precisar de uma tabela nova a cada configuração futura.
+CREATE TABLE IF NOT EXISTS enfermagem_config (
+    chave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL
+);
+
 -- ---------------------------------------------------------------------
 -- Central de Hotelaria
 -- ---------------------------------------------------------------------
