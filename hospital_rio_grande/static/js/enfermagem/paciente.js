@@ -216,7 +216,7 @@
           <span class="icone-categoria">${ICONES[dados.icone] || ""}</span>
           <span class="texto-categoria">
             <strong>${escapeHtml(nome)}</strong>
-            ${mostrarDescricao ? `<small>${escapeHtml(dados.descricao)}</small>` : ""}
+            ${mostrarDescricao ? `<small title="${escapeHtml(dados.descricao)}">${escapeHtml(dados.descricao)}</small>` : ""}
           </span>
         </button>
       `;
