@@ -9,7 +9,7 @@ from andares import leito_valido as _leito_valido_andares
 from enfermagem.acesso import obter_token
 from enfermagem.auth import acesso_paciente_requerido, login_requerido
 from enfermagem.constants import ANDARES, CATEGORIAS
-from enfermagem.leitos import andares_ativos, listar_leitos
+from enfermagem.leitos import leito_ativo, listar_leitos
 
 pages_bp = Blueprint("enfermagem_pages", __name__, url_prefix="/enfermagem")
 
@@ -43,19 +43,24 @@ def _categorias_publicas():
 @pages_bp.route("/")
 @acesso_paciente_requerido
 def paciente_inicio():
-    # QR Code impresso e afixado NUM LEITO ESPECÍFICO (`?andar=...&leito=...`
-    # além do `?acesso=...` já validado pelo decorator): pula a tela de
-    # "escolha seu leito" e já abre direto em "como podemos ajudar?" — só
-    # quando o par andar/leito é realmente válido, claro.
+    # O leito vem SEMPRE do QR Code afixado no quarto (`?andar=...&leito=...`
+    # além do `?acesso=...` já validado pelo decorator) — não existe mais
+    # tela de "escolha seu leito" no fluxo do paciente.
     andar = (request.args.get("andar") or "").strip()
     leito = (request.args.get("leito") or "").strip()
-    leito_preenchido = {"andar": andar, "leito": leito} if _leito_valido_andares(andar, leito) else None
+    if not _leito_valido_andares(andar, leito):
+        return render_template(
+            "erro.html", codigo=400,
+            mensagem="Leito não identificado. Escaneie o QR Code afixado no seu leito para abrir um chamado.",
+        ), 400
+
+    if not leito_ativo(andar, leito):
+        return render_template("enfermagem/qr_desativado.html"), 200
 
     return render_template(
         "enfermagem/paciente.html",
-        andares=andares_ativos(),
         categorias=_categorias_publicas(),
-        leito_preenchido=leito_preenchido,
+        leito_preenchido={"andar": andar, "leito": leito},
     )
 
 

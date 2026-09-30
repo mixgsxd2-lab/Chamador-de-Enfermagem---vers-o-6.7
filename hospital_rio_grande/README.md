@@ -11,7 +11,7 @@ Flask**:
 |---|---|---|---|
 | **Chamador de Enfermagem** (novo/reescrito) | `enfermagem_pages`, `enfermagem_api` | `/enfermagem`, `/api/enfermagem` | Chamados clínicos: urgência, dor, soro, falar com enfermagem |
 | **Central de Hotelaria** (sistema já existente, preservado) | `hotelaria_pages`, `hotelaria_api` | `/hotelaria`, `/hotelaria/api` | Solicitações não clínicas: acomodação, alimentação, lavanderia, manutenção, higienização |
-| **Portal** | `portal` | `/` | Tela inicial com as 3 entradas (Paciente / Admin Enfermagem / Admin Hotelaria) |
+| **Portal** | `portal` | `/` | Tela inicial com as 2 entradas administrativas (Admin Enfermagem / Admin Hotelaria) |
 
 Eles compartilham apenas o processo e o arquivo de banco de dados — cada um
 tem suas próprias tabelas, rotas e telas. A única ponte entre os dois é a
