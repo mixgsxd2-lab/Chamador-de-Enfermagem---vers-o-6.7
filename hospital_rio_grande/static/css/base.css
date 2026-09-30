@@ -331,7 +331,7 @@ img, svg { max-width: 100%; }
 .portal-logo { height: 52px; width: auto; margin: 0 auto 18px; display: block; }
 .portal-titulo { font-size: 1.3rem; font-weight: 800; letter-spacing: 4px; text-transform: uppercase; color: var(--primaria); margin: 0 0 10px; }
 .portal-legenda { color: var(--texto-suave); font-size: 1.05rem; margin: 0 0 36px; }
-.portal-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%; max-width: 900px; margin: 0 auto; text-align: left; }
+.portal-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; width: 100%; max-width: 620px; margin: 0 auto; text-align: left; }
 .portal-cartao {
   background: var(--branco); border-radius: var(--raio); padding: 28px;
   display: flex; flex-direction: column; gap: 10px;
@@ -597,8 +597,9 @@ img, svg { max-width: 100%; }
    `prefers-reduced-motion` (a animação para, mas o fundo vermelho fica). */
 #listaChamados .cartao-chamado-admin.borda-critica {
   background: var(--critica-fundo);
-  border-left: 6px solid var(--critica);
-  animation: pulso-critico 1.6s ease-in-out infinite;
+  border-left: 8px solid var(--critica);
+  outline: 2px solid var(--critica);
+  animation: pulso-critico 1.1s ease-in-out infinite;
   color: #4a0d0a;
 }
 #listaChamados .cartao-chamado-admin.borda-critica .leito-etiqueta-admin,
@@ -607,8 +608,8 @@ img, svg { max-width: 100%; }
   background: var(--critica); color: #fff;
 }
 @keyframes pulso-critico {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0.35), var(--sombra); }
-  50%      { box-shadow: 0 0 0 6px rgba(179, 38, 30, 0.05), 0 6px 20px rgba(179, 38, 30, 0.25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(179, 38, 30, 0.75), var(--sombra); background-color: var(--critica-fundo); }
+  50%      { box-shadow: 0 0 0 10px rgba(179, 38, 30, 0.12), 0 8px 26px rgba(179, 38, 30, 0.5); background-color: #f9c9c5; }
 }
 @media (prefers-reduced-motion: reduce) {
   #listaChamados .cartao-chamado-admin.borda-critica { animation: none; }
@@ -629,7 +630,7 @@ img, svg { max-width: 100%; }
 .cartao-chamado.critico {
   background: var(--critica-fundo);
   border-left-color: var(--critica) !important;
-  animation: pulso-critico 1.6s ease-in-out infinite;
+  animation: pulso-critico 1.1s ease-in-out infinite;
 }
 .cartao-chamado.finalizado.critico { animation: none; background: var(--branco); }
 @media (prefers-reduced-motion: reduce) {

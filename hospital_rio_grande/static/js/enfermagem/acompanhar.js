@@ -140,12 +140,13 @@
   }
 
   // "Sair sem avaliar": libera o dispositivo (remove a referência do
-  // chamado ativo salva no navegador) e leva o paciente de volta à tela
-  // inicial, sem tocar em nada no banco. A avaliação é OPCIONAL — nunca
+  // chamado ativo salva no navegador) e leva o paciente de volta à seleção
+  // de ocorrências do MESMO leito do chamado, sem tocar em nada no banco. A avaliação é OPCIONAL — nunca
   // pode bloquear o paciente de sair.
   function sairSemAvaliar() {
     try { localStorage.removeItem("rg_enfermagem_chamado_ativo"); } catch (e) {}
-    window.location.href = "/enfermagem/";
+    const params = new URLSearchParams({ andar: chamado.andar, leito: chamado.leito });
+    window.location.href = `/enfermagem/?${params.toString()}`;
   }
 
   async function enviarAvaliacao() {

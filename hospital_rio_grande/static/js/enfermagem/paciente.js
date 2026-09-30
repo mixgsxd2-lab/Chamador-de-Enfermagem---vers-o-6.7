@@ -75,7 +75,6 @@
   const ICONE_ENCAMINHADO = '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
 
   const CATEGORIAS_ORDEM = Object.keys(window.CATEGORIAS || {});
-  const LS_ULTIMO_LEITO = "rg_enfermagem_ultimo_leito";
   // "Falar com Enfermagem" é a única categoria sem passo de confirmação: o
   // chamado é criado assim que o paciente escolhe a subopção — pedido
   // explícito do hospital para agilizar solicitações simples (dúvidas,
@@ -122,83 +121,11 @@
     el.trilha.forEach((span) => {
       span.classList.toggle("ativo", parseInt(span.dataset.passo, 10) <= numero);
     });
-    el.botaoVoltar.style.visibility = numero === 1 ? "hidden" : "visible";
+    el.botaoVoltar.style.visibility = numero <= 2 ? "hidden" : "visible";
     // Passo 2 não usa a barra inferior (a escolha já avança de tela) — sem
     // essa classe, o espaço reservado para a barra sobraria embaixo e
     // empurraria as 5 categorias para fora da tela em telas menores.
     el.tela.classList.toggle("tela-sem-barra", numero === 2);
-  }
-
-  // -------------------------------------------------------------------
-  // Passo 1: Andar → Leito
-  // -------------------------------------------------------------------
-  function renderPasso1() {
-    definirPasso(1);
-    el.tela.innerHTML = `
-      <div class="cabecalho-passo">
-        <h1>Chamador de Enfermagem</h1>
-        <p>Selecione seu leito para solicitar atendimento</p>
-      </div>
-      <div class="cartao-passo surgir">
-        <div class="campo">
-          <label for="selectAndar">Andar</label>
-          <select id="selectAndar">
-            <option value="" disabled selected>Selecione o andar</option>
-            ${Object.keys(window.ANDARES).map((a) => `<option value="${a}">${escapeHtml(labelAndar(a))}</option>`).join("")}
-          </select>
-        </div>
-        <div class="campo campo-ultimo">
-          <label for="selectLeito">Leito</label>
-          <select id="selectLeito" disabled>
-            <option value="" disabled selected>Selecione o andar primeiro</option>
-          </select>
-        </div>
-        <div class="aviso-lgpd">
-          <span>🔒</span>
-          <span>Para sua privacidade (LGPD), não pedimos seu nome. Você é identificado apenas pelo número do leito.</span>
-        </div>
-      </div>
-    `;
-    el.barra.innerHTML = `<button class="botao botao-primario botao-bloco" id="botaoContinuar1" disabled>Continuar</button>`;
-
-    const selectAndar = document.getElementById("selectAndar");
-    const selectLeito = document.getElementById("selectLeito");
-    const botaoContinuar = document.getElementById("botaoContinuar1");
-
-    selectAndar.addEventListener("change", () => {
-      const leitos = window.ANDARES[selectAndar.value] || [];
-      selectLeito.disabled = false;
-      selectLeito.innerHTML = `<option value="" disabled selected>Selecione o leito</option>` +
-        leitos.map((l) => `<option value="${l}">Leito ${l}</option>`).join("");
-      atualizarBotao();
-    });
-    selectLeito.addEventListener("change", atualizarBotao);
-
-    function atualizarBotao() {
-      botaoContinuar.disabled = !(selectAndar.value && selectLeito.value);
-    }
-
-    botaoContinuar.addEventListener("click", () => {
-      state.andar = selectAndar.value;
-      state.leito = selectLeito.value;
-      try { localStorage.setItem(LS_ULTIMO_LEITO, JSON.stringify({ andar: state.andar, leito: state.leito })); } catch (e) {}
-      renderPasso2();
-    });
-
-    // Conveniência: pré-selecionar o último leito usado neste dispositivo
-    // (apenas uma lembrança de digitação — o chamado em si nunca é salvo
-    // no navegador, sempre vem do banco de dados).
-    try {
-      const salvo = JSON.parse(localStorage.getItem(LS_ULTIMO_LEITO) || "null");
-      if (salvo && window.ANDARES[salvo.andar]) {
-        selectAndar.value = salvo.andar;
-        selectAndar.dispatchEvent(new Event("change"));
-        if (window.ANDARES[salvo.andar].includes(salvo.leito)) {
-          selectLeito.value = salvo.leito;
-          atualizarBotao();
-        }
-      }
-    } catch (e) {}
   }
 
   // -------------------------------------------------------------------
@@ -230,7 +157,7 @@
       <div class="grade-categorias surgir">${botoes}</div>
     `;
     el.barra.innerHTML = "";
-    el.botaoVoltar.onclick = renderPasso1;
+    el.botaoVoltar.style.visibility = "hidden";
 
     el.tela.querySelectorAll(".cartao-categoria").forEach((botao) => {
       botao.addEventListener("click", () => {
@@ -521,20 +448,12 @@
       try { localStorage.removeItem(LS_ATIVO_HOTELARIA); } catch (e) {}
     }
 
-    // QR Code afixado num leito específico (`?andar=...&leito=...`,
-    // validado no backend — ver enfermagem/routes.py::paciente_inicio):
-    // pula a etapa "escolha seu leito" e já abre direto em "como podemos
-    // ajudar?", já que o próprio QR Code identifica o leito.
-    const leitoPreenchido = window.LEITO_PREENCHIDO;
-    if (leitoPreenchido && window.ANDARES[leitoPreenchido.andar] && window.ANDARES[leitoPreenchido.andar].includes(leitoPreenchido.leito)) {
-      state.andar = leitoPreenchido.andar;
-      state.leito = leitoPreenchido.leito;
-      try { localStorage.setItem(LS_ULTIMO_LEITO, JSON.stringify({ andar: state.andar, leito: state.leito })); } catch (e) {}
-      renderPasso2();
-      return;
-    }
-
-    renderPasso1();
+    // O leito sempre vem do QR Code afixado no quarto (validado e
+    // com leito ativo no backend — ver enfermagem/routes.py::paciente_inicio).
+    const leito = window.LEITO_PREENCHIDO;
+    state.andar = leito.andar;
+    state.leito = leito.leito;
+    renderPasso2();
   }
 
   iniciar();
