@@ -93,13 +93,13 @@ A fila de atendimento **não é ordenada apenas por horário**. Cada
 chamado recebe uma pontuação (`enfermagem/priority.py`), igual à
 **gravidade base** (0–100) da subopção escolhida pelo paciente — ex.:
 "Não consigo respirar bem" = 100, "Dor leve" = 25 — e mapeada em 3
-níveis: 🔴 **Crítico** (gravidade ≥ 85), 🟡 **Médio** (≥ 40),
+níveis: 🔴 **Crítico** (gravidade ≥ 85, ou qualquer chamado de **Dor**), 🟡 **Médio** (≥ 40),
 🟢 **Baixo** (abaixo disso). A fila do painel de enfermagem e da TV é
 sempre ordenada por esses níveis (e, dentro do mesmo nível, pela
 pontuação exata), não pela ordem de chegada.
 
 Cada nível também tem uma meta de tempo de espera (SLA) até o início do
-atendimento — Crítico: 15 min, Médio: 40 min, Baixo: 90 min — usada para
+atendimento — Alta: 10 min, Média: 20 min, Baixa: 40 min — usada para
 sinalizar chamados "acima do tempo esperado" nos dashboards e na Central,
 mas que não altera o nível de criticidade do chamado.
 

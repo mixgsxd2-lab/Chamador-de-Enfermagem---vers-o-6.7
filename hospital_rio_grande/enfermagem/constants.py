@@ -58,9 +58,9 @@ CATEGORIAS = {
         # e o campo `gravidade` para escolher o ícone/cor de cada opção.
         "opcoes": [
             ("Dor no peito", 88),
-            ("Dor muito forte", 70),
-            ("Dor moderada", 45),
-            ("Dor leve", 25),
+            ("Dor muito forte", 87),
+            ("Dor moderada", 86),
+            ("Dor leve", 85),
         ],
     },
     "Soro": {

@@ -21,6 +21,7 @@ def chamado_to_dict(chamado, incluir_prioridade=True):
         "finalizado_em": formata_data_br(chamado.finalizado_em),
         "tempo_atendimento_min": chamado.tempo_atendimento_min(),
         "tempo_total_min": chamado.tempo_total_min(),
+        "segundos_ate_finalizar": chamado.segundos_ate_poder_finalizar(),
         "avaliacao": chamado.avaliacao,
         "comentario_avaliacao": chamado.comentario_avaliacao,
     }

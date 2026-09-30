@@ -33,7 +33,7 @@ from enfermagem.constants import (
 from enfermagem.leitos import leito_ativo, listar_leitos, definir_status_leito
 from enfermagem.models import ChamadoEnfermagem
 from enfermagem.serializers import chamado_to_dict
-from enfermagem.priority import calcular_prioridade, excedeu_sla, _tier
+from enfermagem.priority import calcular_prioridade, excedeu_sla, _tier, TEMPO_MINIMO_ATENDIMENTO_SEG
 
 from hotelaria.services import criar_chamado_hotelaria
 
@@ -354,6 +354,13 @@ def finalizar_chamado(chamado_id):
     if chamado.status != STATUS_EM_ATENDIMENTO:
         return jsonify({"erro": "O chamado precisa estar em atendimento antes de ser finalizado."}), 409
 
+    restante = chamado.segundos_ate_poder_finalizar()
+    if restante > 0:
+        return jsonify({
+            "erro": f"O atendimento precisa durar pelo menos 2 minutos. Aguarde mais {restante}s para finalizar.",
+            "segundos_restantes": restante,
+        }), 409
+
     ok = _transicao_atomica(
         chamado_id, STATUS_EM_ATENDIMENTO, STATUS_FINALIZADO,
         {"finalizado_em": para_texto(agora())},
@@ -473,9 +480,9 @@ def _serie_periodo(db, args, chamados):
         params.append(para_texto(inicio_janela_24h()))
         prioridade = args.get("prioridade")
         for r in db.execute(
-            "SELECT criado_em, gravidade_base FROM enfermagem_chamados WHERE " + " AND ".join(clausulas), params
+            "SELECT criado_em, gravidade_base, categoria FROM enfermagem_chamados WHERE " + " AND ".join(clausulas), params
         ).fetchall():
-            if prioridade and _tier(r["gravidade_base"]) != prioridade:
+            if prioridade and _tier(r["gravidade_base"], r["categoria"]) != prioridade:
                 continue
             datas_24h.append(datetime.fromisoformat(r["criado_em"]))
     return serie_periodo(
