@@ -239,7 +239,6 @@
 /* ==========================================================================
    Configurações — Acesso do Paciente (QR Code)
    ========================================================================== */
-.cartao-acesso-paciente { margin-bottom: 20px; }
 .bloco-qrcode-paciente { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
 .imagem-qrcode {
   width: 168px; height: 168px; padding: 10px; background: var(--branco);
@@ -252,6 +251,7 @@
   flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px;
   border: 1px solid var(--borda); font-size: 0.85rem; background: var(--fundo);
 }
+.pagina-configuracoes { display: flex; flex-direction: column; gap: 20px; }
 #textoModalExpirar { margin: 0 0 16px; color: var(--texto-suave); font-size: 0.92rem; }
 
 @media (max-width: 640px) {
@@ -262,7 +262,6 @@
 /* ==========================================================================
    Configurações — Gerador de QR Code por Leito
    ========================================================================== */
-.cartao-qrcode-leito { margin-bottom: 20px; }
 .selecao-qrcode-leito { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 4px; }
 .selecao-qrcode-leito .campo { flex: 1 1 200px; min-width: 200px; margin-bottom: 0; }
 .bloco-qrcode-leito-resultado { margin-top: 18px; }

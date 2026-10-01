@@ -585,6 +585,8 @@ e filtros com dados reais, e ausência de qualquer stack trace exposta.
   todo mundo, não 24 h a partir do escaneamento. Depois disso, a tela do
   paciente e as de acompanhamento mostram "Acesso expirado — escaneie o QR
   Code do seu leito"; escaneando de novo, entra até a meia-noite seguinte.
+- Configurações: o **Gerador de QR Code por Leito** fica no topo; **Controle de Leitos** e
+  **Acesso pelo QR Code** ficam recolhidos e só aparecem ao clicar em "Mostrar".
 - Configurações → **Acesso pelo QR Code** (com cronômetro de quanto falta para o reset da meia-noite): "Expirar acesso" por leito
   e "Expirar todos", ambos com confirmação ("Tem certeza?"), liberados para
   qualquer usuário logado na área administrativa (uso de teste). A tela aberta no celular troca para

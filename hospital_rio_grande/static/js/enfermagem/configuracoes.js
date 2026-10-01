@@ -102,6 +102,20 @@
   carregar();
 
   // ---------------------------------------------------------------------
+  // Cartões recolhíveis (Controle de Leitos, Acesso pelo QR Code): ficam
+  // escondidos até a equipe clicar em "Mostrar".
+  // ---------------------------------------------------------------------
+  document.querySelectorAll("[data-alternar]").forEach((botao) => {
+    const corpo = document.getElementById(botao.dataset.alternar);
+    botao.addEventListener("click", () => {
+      const abrir = corpo.hidden;
+      corpo.hidden = !abrir;
+      botao.setAttribute("aria-expanded", String(abrir));
+      botao.textContent = abrir ? "Ocultar" : "Mostrar";
+    });
+  });
+
+  // ---------------------------------------------------------------------
   // Acesso do Paciente (QR Code) — copiar link (o QR Code é fixo; expirar
   // acessos fica no cartão "Acesso pelo QR Code" — ver acesso_leitos.js)
   // ---------------------------------------------------------------------
