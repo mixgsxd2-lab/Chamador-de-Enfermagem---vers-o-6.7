@@ -41,9 +41,9 @@ _OPCOES_ENF = [
     ("Urgência", "Dor súbita e muito intensa", 92, 1.2),
     ("Urgência", "Outra emergência", 90, 0.7),
     ("Dor", "Dor no peito", 88, 2.2),
-    ("Dor", "Dor muito forte", 70, 6.0),
-    ("Dor", "Dor moderada", 45, 10.0),
-    ("Dor", "Dor leve", 25, 7.5),
+    ("Dor", "Dor muito forte", 87, 6.0),
+    ("Dor", "Dor moderada", 86, 10.0),
+    ("Dor", "Dor leve", 85, 7.5),
     ("Soro", "Está retornando sangue", 75, 3.4),
     ("Soro", "Problema no acesso", 65, 5.8),
     ("Soro", "Acabou", 55, 10.2),
@@ -145,8 +145,8 @@ def _leito_aleatorio(rng, leitos_quentes):
     return andar, rng.choice(ANDARES[andar])
 
 
-def _tier(gravidade):
-    if gravidade >= 85:
+def _tier(gravidade, categoria=None):
+    if gravidade >= 85 or categoria == "Dor":
         return "critica"
     if gravidade >= 40:
         return "media"
@@ -169,7 +169,7 @@ def _gerar_enfermagem(rng, criado, andar, leito, opcao=None, estado=None, agora_
     força o status (usado nos cenários ativos); caso contrário, o status é
     deduzido comparando os horários sorteados com `agora_ref`."""
     categoria, subcategoria, gravidade = opcao or _escolher(rng, [((c, s, g), p) for c, s, g, p in _OPCOES_ENF])
-    tier = _tier(gravidade)
+    tier = _tier(gravidade, categoria)
     base_min, base_max, prob_atraso, atraso_min, atraso_max = _ESPERA_FAIXA[tier]
     # Madrugada: equipe reduzida, espera um pouco maior.
     fator = 1.25 if criado.hour < 6 else 1.0
@@ -201,7 +201,7 @@ def _gerar_enfermagem(rng, criado, andar, leito, opcao=None, estado=None, agora_
     elif estado == "em_atendimento":
         fim = None
     else:
-        sla = {"critica": 15, "media": 40, "baixa": 90}[tier]
+        sla = {"critica": 10, "media": 20, "baixa": 40}[tier]
         if rng.random() < 0.62:
             avaliacao = _nota(rng, espera > sla)
             if rng.random() < 0.35:

@@ -156,6 +156,7 @@
     }
     if (c.status === "em_atendimento") {
       acoes.push(`<button class="botao botao-sucesso botao-bloco" id="botaoFinalizar">Finalizar atendimento</button>`);
+      acoes.push(`<p class="texto-suave" id="avisoTempoMinimo" style="margin:6px 0 0;font-size:.85rem;" hidden></p>`);
     }
 
     modalChamado.innerHTML = `
@@ -185,7 +186,36 @@
     const btnAssumir = document.getElementById("botaoAssumir");
     if (btnAssumir) btnAssumir.addEventListener("click", () => HRG.comBotaoTravado(btnAssumir, () => assumir(c.id)));
     const btnFinalizar = document.getElementById("botaoFinalizar");
-    if (btnFinalizar) btnFinalizar.addEventListener("click", () => HRG.comBotaoTravado(btnFinalizar, () => finalizar(c.id)));
+    if (btnFinalizar) {
+      btnFinalizar.addEventListener("click", () => HRG.comBotaoTravado(btnFinalizar, () => finalizar(c.id)));
+      iniciarContagemFinalizar(btnFinalizar, c.segundos_ate_finalizar || 0);
+    }
+  }
+
+  // Tempo mínimo de atendimento (2 min): o botão "Finalizar" fica bloqueado
+  // com contagem regressiva. O servidor é quem decide (devolve 409 se
+  // tentarem antes), aqui é só a indicação visual.
+  let timerFinalizar = null;
+  function iniciarContagemFinalizar(botao, restante) {
+    clearInterval(timerFinalizar);
+    const aviso = document.getElementById("avisoTempoMinimo");
+    const fim = Date.now() + restante * 1000;
+    const atualizar = () => {
+      const seg = Math.ceil((fim - Date.now()) / 1000);
+      if (!document.body.contains(botao)) { clearInterval(timerFinalizar); return; }
+      if (seg > 0) {
+        botao.disabled = true;
+        botao.textContent = `Finalizar atendimento (${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, "0")})`;
+        if (aviso) { aviso.hidden = false; aviso.textContent = "Tempo mínimo de atendimento: 2 minutos após assumir o chamado."; }
+      } else {
+        clearInterval(timerFinalizar);
+        botao.disabled = false;
+        botao.textContent = "Finalizar atendimento";
+        if (aviso) aviso.hidden = true;
+      }
+    };
+    atualizar();
+    if (restante > 0) timerFinalizar = setInterval(atualizar, 1000);
   }
 
   async function assumir(id) {

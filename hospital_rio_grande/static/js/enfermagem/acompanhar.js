@@ -111,6 +111,7 @@
           <div class="icone-check">${ICONE_CHECK}</div>
           <h3>Obrigado pela sua avaliação!</h3>
           <p style="color:var(--texto-suave);">Seu feedback ajuda a melhorar nosso atendimento.</p>
+          <a class="botao largo" href="${urlNovaSolicitacao()}" style="margin-top:8px;">Nova solicitação</a>
         </div>
       `;
       return;
@@ -123,7 +124,6 @@
         <div class="estrelas" id="estrelasAvaliacao">${estrelasHtml}</div>
         <textarea id="comentarioAvaliacao" maxlength="300" placeholder="Comentário (opcional)" aria-label="Comentário sobre o atendimento"></textarea>
         <button class="botao largo" id="botaoEnviarAvaliacao" style="margin-top:12px;">Enviar avaliação</button>
-        <button class="botao secundario largo" id="botaoSairSemAvaliar" style="margin-top:8px;">Sair sem avaliar</button>
       </div>
     `;
 
@@ -136,23 +136,22 @@
     });
 
     document.getElementById("botaoEnviarAvaliacao").addEventListener("click", enviarAvaliacao);
-    document.getElementById("botaoSairSemAvaliar").addEventListener("click", sairSemAvaliar);
   }
 
-  // "Sair sem avaliar": libera o dispositivo (remove a referência do
-  // chamado ativo salva no navegador) e leva o paciente de volta à seleção
-  // de ocorrências do MESMO leito do chamado, sem tocar em nada no banco. A avaliação é OPCIONAL — nunca
-  // pode bloquear o paciente de sair.
-  function sairSemAvaliar() {
-    try { localStorage.removeItem("rg_enfermagem_chamado_ativo"); } catch (e) {}
+  // Volta à seleção de ocorrências do MESMO leito do chamado.
+  function urlNovaSolicitacao() {
     const params = new URLSearchParams({ andar: chamado.andar, leito: chamado.leito });
-    window.location.href = `/enfermagem/?${params.toString()}`;
+    return `/enfermagem/?${params.toString()}`;
+  }
+
+  function novaSolicitacao() {
+    window.location.href = urlNovaSolicitacao();
   }
 
   async function enviarAvaliacao() {
     if (enviandoAvaliacao) return;
     if (estrelasSelecionadas < 1) {
-      HRG.toast("Selecione de 1 a 5 estrelas, ou apenas ignore — a avaliação é opcional.", "info");
+      HRG.toast("A avaliação é obrigatória: selecione de 1 a 5 estrelas.", "info");
       return;
     }
     enviandoAvaliacao = true;
@@ -167,7 +166,11 @@
         });
         chamado = dados;
         detectorEstado(snapshot(chamado));
+        // Avaliou: libera o dispositivo e volta à seleção de novas demandas
+        // do mesmo leito.
+        try { localStorage.removeItem("rg_enfermagem_chamado_ativo"); } catch (e) {}
         renderAvaliacao();
+        setTimeout(novaSolicitacao, 2500);
       } catch (err) {
         HRG.toast(err.message, "erro");
       }

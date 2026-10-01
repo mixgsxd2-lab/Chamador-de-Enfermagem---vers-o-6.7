@@ -35,10 +35,18 @@ LIMIAR_MEDIA = 40
 # para o destaque "Atenção imediata" da Central.
 # ---------------------------------------------------------------------------
 SLA_MINUTOS = {
-    "critica": 15,
-    "media": 40,
-    "baixa": 90,
+    "critica": 10,
+    "media": 20,
+    "baixa": 40,
 }
+
+# Tempo mínimo (em segundos) de atendimento: depois que o profissional
+# assume o chamado, ele só pode finalizá-lo após esse intervalo.
+TEMPO_MINIMO_ATENDIMENTO_SEG = 120
+
+# Categorias cujos chamados são SEMPRE de alta criticidade, qualquer que
+# seja a subopção escolhida (ex.: toda "Dor" é Alta).
+CATEGORIAS_SEMPRE_CRITICAS = ("Dor",)
 
 
 def excedeu_sla(tier, tempo_espera_min):
@@ -52,8 +60,8 @@ def excedeu_sla(tier, tempo_espera_min):
     return tempo_espera_min > limite
 
 
-def _tier(gravidade_base):
-    if gravidade_base >= LIMIAR_CRITICA_BASE:
+def _tier(gravidade_base, categoria=None):
+    if categoria in CATEGORIAS_SEMPRE_CRITICAS or gravidade_base >= LIMIAR_CRITICA_BASE:
         return "critica"
     if gravidade_base >= LIMIAR_MEDIA:
         return "media"
@@ -89,7 +97,7 @@ def calcular_prioridade(chamado, referencia=None):
     tempo_espera_min = duracao_minutos(chamado.criado_em, referencia) or 0.0
 
     score = float(chamado.gravidade_base)
-    tier = _tier(chamado.gravidade_base)
+    tier = _tier(chamado.gravidade_base, chamado.categoria)
 
     return {
         "score": score,

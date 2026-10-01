@@ -42,6 +42,15 @@ class ChamadoEnfermagem:
             return round((self.finalizado_em - self.inicio_atendimento).total_seconds() / 60, 1)
         return None
 
+    def segundos_ate_poder_finalizar(self):
+        """Segundos que ainda faltam para cumprir o tempo mínimo de
+        atendimento (0 se já pode finalizar)."""
+        from enfermagem.priority import TEMPO_MINIMO_ATENDIMENTO_SEG
+        if self.status != "em_atendimento" or not self.inicio_atendimento:
+            return 0
+        decorrido = (agora() - self.inicio_atendimento).total_seconds()
+        return max(0, int(TEMPO_MINIMO_ATENDIMENTO_SEG - decorrido + 0.999))
+
     def tempo_total_min(self):
         fim = self.finalizado_em or agora()
         if self.criado_em:
