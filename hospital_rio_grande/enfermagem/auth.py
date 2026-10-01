@@ -11,9 +11,9 @@ dados dos pacientes.
 """
 from functools import wraps
 
-from flask import jsonify, redirect, render_template, request, session, url_for
+from flask import g, jsonify, make_response, redirect, render_template, request, session, url_for
 
-from enfermagem.acesso import SESSAO_TOKEN, token_valido
+from enfermagem.acesso import acesso_atual, tinha_acesso
 
 
 def login_requerido(f):
@@ -27,26 +27,28 @@ def login_requerido(f):
     return decorated
 
 
-def acesso_paciente_requerido(f):
-    """Protege a ENTRADA da tela do paciente (item pedido pelo hospital:
-    só quem escaneou o QR Code do leito pode abrir um chamado novo).
+def tela_acesso_expirado():
+    """Tela mostrada no celular do paciente quando a liberação do QR Code
+    acabou (meia-noite ou "Expirar acesso" na Central) ou nunca existiu."""
+    resposta = make_response(render_template("enfermagem/acesso_expirado.html", expirado=tinha_acesso()), 403)
+    resposta.headers["Cache-Control"] = "no-store"
+    return resposta
 
-    Só é aplicado ao ponto de entrada (`/enfermagem/`) e à criação de
-    chamado — o acompanhamento de um chamado já criado (`/acompanhar/...`)
-    continua acessível mesmo que o acesso tenha sido revogado depois,
-    para não cortar quem já está com um atendimento em andamento."""
+
+def acesso_paciente_requerido(f):
+    """Protege as telas/ações do paciente: só quem escaneou o QR Code do
+    leito HOJE (e não foi revogado depois) pode usar — ver
+    enfermagem/acesso.py. A liberação vigente fica em `g.acesso_paciente`."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        token_da_url = request.args.get("acesso")
-        if token_da_url and token_valido(token_da_url):
-            session[SESSAO_TOKEN] = token_da_url
-
-        if not token_valido(session.get(SESSAO_TOKEN)):
+        acesso = acesso_atual()
+        if acesso is None:
             if request.path.startswith("/api/"):
-                return jsonify({"erro": "Acesso restrito. Use o QR Code fornecido pela equipe de enfermagem."}), 403
-            return render_template(
-                "erro.html", codigo=403,
-                mensagem="Acesso restrito. Use o QR Code fornecido pela equipe de enfermagem para abrir um chamado.",
-            ), 403
+                return jsonify({
+                    "erro": "Acesso expirado. Escaneie o QR Code do seu leito.",
+                    "acesso_expirado": True,
+                }), 403
+            return tela_acesso_expirado()
+        g.acesso_paciente = acesso
         return f(*args, **kwargs)
     return decorated

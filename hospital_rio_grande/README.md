@@ -572,3 +572,23 @@ e filtros com dados reais, e ausência de qualquer stack trace exposta.
   volta para a área do paciente da Enfermagem, pronta para um novo chamado.
 - A área do paciente da Enfermagem retoma sozinha um pedido de Hotelaria em
   aberto (ou finalizado e ainda sem avaliação) neste dispositivo.
+
+## Alterações — acesso do paciente pelo QR Code válido até a meia-noite
+
+- O QR Code de cada leito é **fixo** (o token nunca é trocado). O antigo
+  botão "Revogar acesso de todos os links atuais" de Configurações, que
+  gerava um token novo e invalidava os QR Codes impressos, foi removido.
+- Ao escanear, o paciente entra sem senha: o servidor grava na sessão do
+  navegador o leito e o horário (Fortaleza) e redireciona para `/enfermagem/`
+  sem o token — recarregar a página não renova o acesso, só escanear.
+- O acesso vale até a **próxima meia-noite (00:00, America/Fortaleza)** para
+  todo mundo, não 24 h a partir do escaneamento. Depois disso, a tela do
+  paciente e as de acompanhamento mostram "Acesso expirado — escaneie o QR
+  Code do seu leito"; escaneando de novo, entra até a meia-noite seguinte.
+- Central de Enfermagem → **Acesso pelo QR Code**: "Expirar acesso" por leito
+  e "Expirar todos", ambos com confirmação ("Tem certeza?"), liberados para
+  qualquer usuário logado (uso de teste). A tela aberta no celular troca para
+  "Acesso expirado" em até ~10 s (`static/js/enfermagem/acesso_paciente.js`).
+  Quem escanear depois da revogação entra, mas só até a mesma meia-noite.
+- Regra em `enfermagem/acesso.py`; tabela `enfermagem_acesso_leitos` guarda
+  só andar, leito e horários — nenhum dado do paciente.

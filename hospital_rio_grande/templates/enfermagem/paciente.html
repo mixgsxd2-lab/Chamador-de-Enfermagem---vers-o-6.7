@@ -27,6 +27,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/enfermagem/acesso_paciente.js') }}"></script>
 <script>
   window.CATEGORIAS = {{ categorias | tojson }};
   window.LEITO_PREENCHIDO = {{ leito_preenchido | tojson }};

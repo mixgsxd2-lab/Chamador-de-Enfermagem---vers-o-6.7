@@ -51,12 +51,28 @@ CREATE TABLE IF NOT EXISTS enfermagem_leitos_inativos (
     PRIMARY KEY (andar, leito)
 );
 
--- Configurações simples de chave/valor da Enfermagem — hoje guarda só o
--- token de acesso da tela do paciente (ver enfermagem/acesso.py), mas fica
+-- Configurações simples de chave/valor da Enfermagem — hoje guarda o token
+-- fixo dos QR Codes e o horário do último "Expirar todos" (ver
+-- enfermagem/acesso.py), mas fica
 -- genérica para não precisar de uma tabela nova a cada configuração futura.
 CREATE TABLE IF NOT EXISTS enfermagem_config (
     chave TEXT PRIMARY KEY,
     valor TEXT NOT NULL
+);
+
+-- Acesso do paciente pelo QR Code do leito (ver enfermagem/acesso.py).
+-- Uma linha por leito, criada na primeira vez que algo acontece com ele.
+-- Guarda SÓ horários — nenhum dado do paciente (nome, aparelho, etc.):
+--   ultimo_acesso_em: última vez que o QR Code deste leito foi escaneado
+--                     (só para a Central mostrar "liberado hoje às HH:MM");
+--   expirado_em:      último "Expirar acesso" da Central para este leito —
+--                     toda liberação ANTERIOR a esse horário deixa de valer.
+CREATE TABLE IF NOT EXISTS enfermagem_acesso_leitos (
+    andar TEXT NOT NULL,
+    leito TEXT NOT NULL,
+    ultimo_acesso_em TEXT,
+    expirado_em TEXT,
+    PRIMARY KEY (andar, leito)
 );
 
 -- ---------------------------------------------------------------------

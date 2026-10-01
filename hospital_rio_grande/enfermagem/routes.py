@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 import io
 
-from flask import Blueprint, Response, abort, current_app, flash, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint, Response, abort, current_app, flash, g, make_response, redirect, render_template, request,
+    session, url_for,
+)
 
 from db import get_db
 from ratelimit import permitido as rate_limit_permitido
 from andares import leito_valido as _leito_valido_andares
-from enfermagem.acesso import obter_token
+from enfermagem.acesso import conceder_acesso, obter_token, token_valido
 from enfermagem.auth import acesso_paciente_requerido, login_requerido
 from enfermagem.constants import ANDARES, CATEGORIAS
 from enfermagem.leitos import leito_ativo, listar_leitos
@@ -15,7 +18,7 @@ pages_bp = Blueprint("enfermagem_pages", __name__, url_prefix="/enfermagem")
 
 
 def url_acesso_paciente(andar=None, leito=None):
-    """URL completa (com o token de acesso atual) que o QR Code deve
+    """URL completa (com o token fixo de acesso) que o QR Code deve
     apontar — usada tanto para gerar o QR quanto para mostrar o link em
     texto na tela de Configurações. Quando `andar`/`leito` são passados
     (QR Code impresso e afixado num leito específico), a tela do paciente
@@ -40,31 +43,59 @@ def _categorias_publicas():
     }
 
 
+def _sem_cache(resposta):
+    # Telas do paciente nunca podem vir do cache do navegador (botão Voltar
+    # / reabrir a aba): depois da meia-noite ou de uma revogação, o servidor
+    # precisa ser consultado de novo para mostrar "Acesso expirado".
+    resposta = make_response(resposta)
+    resposta.headers["Cache-Control"] = "no-store"
+    return resposta
+
+
 @pages_bp.route("/")
-@acesso_paciente_requerido
 def paciente_inicio():
-    # O leito vem SEMPRE do QR Code afixado no quarto (`?andar=...&leito=...`
-    # além do `?acesso=...` já validado pelo decorator) — não existe mais
-    # tela de "escolha seu leito" no fluxo do paciente.
-    andar = (request.args.get("andar") or "").strip()
-    leito = (request.args.get("leito") or "").strip()
-    if not _leito_valido_andares(andar, leito):
-        return render_template(
-            "erro.html", codigo=400,
-            mensagem="Leito não identificado. Escaneie o QR Code afixado no seu leito para abrir um chamado.",
-        ), 400
+    # Entrada pelo QR Code afixado no leito: `?acesso=<token fixo>&andar=...
+    # &leito=...`. Libera este navegador até a próxima meia-noite e
+    # redireciona para a URL sem o token — recarregar a página depois NÃO
+    # renova o acesso; só escanear o QR Code de novo (ver enfermagem/acesso.py).
+    token = request.args.get("acesso")
+    if token is not None:
+        if not token_valido(token):
+            return render_template(
+                "erro.html", codigo=403,
+                mensagem="Acesso restrito. Use o QR Code fornecido pela equipe de enfermagem para abrir um chamado.",
+            ), 403
+        andar = (request.args.get("andar") or "").strip()
+        leito = (request.args.get("leito") or "").strip()
+        if not _leito_valido_andares(andar, leito):
+            return render_template(
+                "erro.html", codigo=400,
+                mensagem="Leito não identificado. Escaneie o QR Code afixado no seu leito para abrir um chamado.",
+            ), 400
+        if not leito_ativo(andar, leito):
+            return render_template("enfermagem/qr_desativado.html"), 200
+        conceder_acesso(andar, leito)
+        return _sem_cache(redirect(url_for("enfermagem_pages.paciente_inicio")))
+    return _tela_paciente()
 
+
+@acesso_paciente_requerido
+def _tela_paciente():
+    # O leito vem SEMPRE da liberação gravada ao escanear o QR Code — não
+    # existe tela de "escolha seu leito" no fluxo do paciente.
+    andar, leito = g.acesso_paciente["andar"], g.acesso_paciente["leito"]
     if not leito_ativo(andar, leito):
-        return render_template("enfermagem/qr_desativado.html"), 200
+        return _sem_cache(render_template("enfermagem/qr_desativado.html"))
 
-    return render_template(
+    return _sem_cache(render_template(
         "enfermagem/paciente.html",
         categorias=_categorias_publicas(),
         leito_preenchido={"andar": andar, "leito": leito},
-    )
+    ))
 
 
 @pages_bp.route("/acompanhar-hotelaria/<int:chamado_id>")
+@acesso_paciente_requerido
 def acompanhar_hotelaria(chamado_id):
     """Acompanhamento de um pedido de Hotelaria feito pelo paciente (categoria
     "Outros") — vive aqui, na área do paciente da Enfermagem, no lugar da
@@ -73,16 +104,17 @@ def acompanhar_hotelaria(chamado_id):
     row = db.execute("SELECT id FROM hotelaria_chamados WHERE id = ?", (chamado_id,)).fetchone()
     if row is None:
         abort(404, description="Chamado não encontrado.")
-    return render_template("enfermagem/acompanhar_hotelaria.html", chamado_id=chamado_id)
+    return _sem_cache(render_template("enfermagem/acompanhar_hotelaria.html", chamado_id=chamado_id))
 
 
 @pages_bp.route("/acompanhar/<int:chamado_id>")
+@acesso_paciente_requerido
 def acompanhar(chamado_id):
     db = get_db()
     row = db.execute("SELECT id FROM enfermagem_chamados WHERE id = ?", (chamado_id,)).fetchone()
     if row is None:
         abort(404, description="Chamado não encontrado.")
-    return render_template("enfermagem/acompanhar.html", chamado_id=chamado_id)
+    return _sem_cache(render_template("enfermagem/acompanhar.html", chamado_id=chamado_id))
 
 
 # ---------------------------------------------------------------------------
@@ -161,8 +193,8 @@ def configuracoes():
 @login_requerido
 def qrcode_acesso_paciente():
     """QR Code (SVG) do link atual — para a equipe imprimir e afixar no
-    leito/quarto. Gerado na hora a cada acesso (nunca salvo em disco) para
-    sempre refletir o token vigente. Aceita `?andar=...&leito=...` opcionais
+    leito/quarto. Gerado na hora a cada acesso (nunca salvo em disco); o
+    token é fixo, então o QR Code de um leito nunca muda. Aceita `?andar=...&leito=...` opcionais
     para gerar o QR Code JÁ COM O LEITO daquele quarto (ver
     `paciente_inicio`); sem eles, gera o QR Code genérico usado no card de
     Configurações."""

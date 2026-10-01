@@ -25,6 +25,10 @@
     </div>
 
     <div class="barra-filtros barra-filtros-central">
+      <button class="botao-filtros-avancados" id="botaoAcessoQrcode" type="button" aria-expanded="false" aria-controls="painelAcessoQrcode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg>
+        Acesso pelo QR Code
+      </button>
       <button class="botao-filtros-avancados" id="botaoFiltrosAvancados" type="button" aria-expanded="false" aria-controls="painelFiltrosAvancados">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/></svg>
         Mais filtros
@@ -93,6 +97,27 @@
       <button class="botao botao-fantasma pequeno" id="botaoLimparFiltros" type="button">Limpar filtros</button>
     </div>
 
+    <section class="cartao-config painel-acesso-qrcode" id="painelAcessoQrcode" hidden>
+      <div class="cabecalho-cartao-config">
+        <div>
+          <h2>Acesso pelo QR Code</h2>
+          <p>Quem escaneia o QR Code do leito entra sem senha até a meia-noite (horário de Fortaleza). Expirar derruba o acesso na hora; quem escanear de novo entra até a mesma meia-noite.</p>
+        </div>
+        <div class="acoes-acesso-qrcode">
+          <span class="resumo-leitos-item"><b id="totalLiberados">0</b> liberados hoje</span>
+          <button type="button" class="botao perigo pequeno" id="botaoExpirarTodos">Expirar todos</button>
+        </div>
+      </div>
+
+      <div class="campo campo-busca-leito">
+        <input type="text" id="buscaLeitoAcesso" placeholder="Buscar andar ou leito..." aria-label="Buscar andar ou leito">
+      </div>
+
+      <div id="listaAcessoLeitos" class="lista-andares-config">
+        <p class="texto-carregando">Carregando leitos...</p>
+      </div>
+    </section>
+
     <div class="filtros-ativos" id="filtrosAtivos"></div>
 
     <div class="lista-chamados-admin" id="listaChamados">
@@ -104,8 +129,22 @@
 <div class="fundo-modal" id="fundoModal">
   <div class="modal-chamado-admin" id="modalChamado" role="dialog" aria-modal="true" aria-label="Detalhe do chamado"></div>
 </div>
+<div class="fundo-modal" id="fundoModalExpirar">
+  <div class="modal-chamado-admin" role="dialog" aria-modal="true" aria-labelledby="tituloModalExpirar">
+    <div class="modal-topo-admin">
+      <h2 id="tituloModalExpirar">Tem certeza?</h2>
+      <button class="fechar-modal" id="botaoFecharModalExpirar" aria-label="Fechar">✕</button>
+    </div>
+    <p id="textoModalExpirar"></p>
+    <div class="linha-acoes-modal">
+      <button type="button" class="botao botao-fantasma" id="botaoCancelarExpirar">Cancelar</button>
+      <button type="button" class="botao perigo" id="botaoConfirmarExpirar">Sim, expirar</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/enfermagem/central.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enfermagem/central_acesso.js') }}"></script>
 {% endblock %}
