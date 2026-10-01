@@ -730,6 +730,9 @@ img, svg { max-width: 100%; }
 
 /* Central de Enfermagem → Acesso pelo QR Code (expirar acesso por leito) */
 .grade-leitos-acesso { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.botao-alternar-cartao { flex-shrink: 0; min-width: 92px; }
+.cabecalho-cartao-config:has(+ .corpo-cartao-config[hidden]) { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.corpo-cartao-config .resumo-leitos, .corpo-cartao-config .acoes-acesso-qrcode { margin-bottom: 16px; }
 .acoes-acesso-qrcode { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .cronometro-reset {
   display: inline-flex; align-items: center; gap: 6px; background: var(--primaria-clara); color: var(--primaria-escura);
