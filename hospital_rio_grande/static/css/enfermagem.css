@@ -252,13 +252,11 @@
   flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px;
   border: 1px solid var(--borda); font-size: 0.85rem; background: var(--fundo);
 }
-.botao-revogar-acesso { align-self: flex-start; color: var(--perigo); }
-#modalRevogar p { margin: 0 0 16px; color: var(--texto-suave); font-size: 0.92rem; }
+#textoModalExpirar { margin: 0 0 16px; color: var(--texto-suave); font-size: 0.92rem; }
 
 @media (max-width: 640px) {
   .bloco-qrcode-paciente { flex-direction: column; align-items: center; text-align: center; }
   .campo-com-botao { flex-direction: column; }
-  .botao-revogar-acesso { align-self: stretch; }
 }
 
 /* ==========================================================================

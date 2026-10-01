@@ -13,7 +13,7 @@ sem bloqueios.
 """
 from datetime import datetime
 
-from flask import Blueprint, abort, jsonify, request, session, url_for
+from flask import Blueprint, abort, g, jsonify, request, session, url_for
 
 from db import get_db
 from timeutils import (
@@ -22,7 +22,7 @@ from timeutils import (
     serie_periodo, inicio_janela_24h,
 )
 
-from enfermagem.acesso import obter_token, revogar_acesso
+from enfermagem.acesso import acesso_atual, expirar_leito, expirar_todos, obter_token, status_leitos
 from enfermagem.auth import acesso_paciente_requerido, login_requerido
 from enfermagem.constants import (
     ANDARES, CATEGORIAS, CATEGORIA_OUTROS,
@@ -202,6 +202,9 @@ def criar_chamado():
 
     if not leito_valido(andar, leito):
         return jsonify({"erro": "Andar ou leito inválido."}), 400
+    # Só o leito cujo QR Code foi escaneado (ver enfermagem/acesso.py).
+    if (andar, leito) != (g.acesso_paciente["andar"], g.acesso_paciente["leito"]):
+        return jsonify({"erro": "Escaneie o QR Code do seu leito para abrir um chamado."}), 403
     if not leito_ativo(andar, leito):
         return jsonify({"erro": "Este leito está desativado no momento."}), 400
     if not categoria_valida(categoria):
@@ -668,11 +671,57 @@ def acesso_paciente_info():
     return jsonify({"url": _url_acesso_paciente(obter_token(), andar or None, leito or None)})
 
 
-@api_bp.route("/acesso/revogar", methods=["POST"])
+@api_bp.route("/acesso/status", methods=["GET"])
+def acesso_paciente_status():
+    """Consultado periodicamente pelas telas do paciente: assim que passa da
+    meia-noite ou a Central expira o acesso, a tela troca para "Acesso
+    expirado" sem o paciente precisar recarregar. `segundos_restantes` vem
+    do relógio do servidor (o do celular pode estar errado)."""
+    acesso = acesso_atual()
+    if acesso is None:
+        resposta = jsonify({"valido": False})
+    else:
+        restantes = max(0, int((acesso["expira_em"] - agora()).total_seconds()))
+        resposta = jsonify({"valido": True, "segundos_restantes": restantes})
+    resposta.headers["Cache-Control"] = "no-store"
+    return resposta
+
+
+@api_bp.route("/acesso/leitos", methods=["GET"])
 @login_requerido
-def revogar_acesso_paciente():
-    """Gera um novo link/QR Code e invalida instantaneamente todos os
-    anteriores — qualquer pessoa que só tinha o link antigo (não o QR Code
-    novo) perde o acesso à tela do paciente."""
-    token = revogar_acesso()
-    return jsonify({"url": _url_acesso_paciente(token)})
+def acesso_leitos():
+    """Leitos por andar + quais estão com acesso liberado hoje (painel
+    "Acesso pelo QR Code" da Central)."""
+    liberados = status_leitos()
+    andares = [
+        {
+            "andar": grupo["andar"],
+            "andar_label": grupo["andar_label"],
+            "leitos": [
+                {"leito": l["leito"], "ativo": l["ativo"], "liberado_desde": liberados.get((grupo["andar"], l["leito"]))}
+                for l in grupo["leitos"]
+            ],
+        }
+        for grupo in listar_leitos()
+    ]
+    return jsonify({"andares": andares})
+
+
+@api_bp.route("/acesso/expirar", methods=["POST"])
+@login_requerido
+def expirar_acesso_leito():
+    """Derruba na hora o acesso de quem escaneou o QR Code deste leito. Quem
+    escanear de novo entra, mas só até a mesma meia-noite."""
+    dados = request.get_json(silent=True) or {}
+    andar = (dados.get("andar") or "").strip()
+    leito = (dados.get("leito") or "").strip()
+    if not expirar_leito(andar, leito):
+        return jsonify({"erro": "Andar ou leito inválido."}), 400
+    return jsonify({"andar": andar, "leito": leito, "expirado": True})
+
+
+@api_bp.route("/acesso/expirar-todos", methods=["POST"])
+@login_requerido
+def expirar_acesso_todos():
+    expirar_todos()
+    return jsonify({"expirado": True})

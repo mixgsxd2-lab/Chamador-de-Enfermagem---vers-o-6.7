@@ -359,6 +359,7 @@ img, svg { max-width: 100%; }
 .tela-erro-caixa { text-align: center; background: var(--branco); padding: 44px 36px; border-radius: var(--raio); box-shadow: var(--sombra-media); max-width: 420px; }
 .tela-erro-codigo { font-size: 3rem; font-weight: 900; color: var(--primaria); display: block; margin-bottom: 8px; }
 .tela-erro-caixa p { color: var(--texto-suave); margin-bottom: 22px; }
+.tela-erro-titulo { font-size: 1.2rem; margin: 0 0 10px; }
 
 /* ==========================================================================
    Acompanhamento do chamado pelo paciente (Hotelaria E Enfermagem — mesmo
@@ -727,6 +728,21 @@ img, svg { max-width: 100%; }
 .leito-config.ativo .interruptor-bola { transform: translateX(16px); }
 .leito-config:disabled, .leito-config[disabled] { opacity: 0.6; pointer-events: none; }
 
+/* Central de Enfermagem → Acesso pelo QR Code (expirar acesso por leito) */
+.painel-acesso-qrcode { margin-bottom: 16px; }
+.grade-leitos-acesso { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.acoes-acesso-qrcode { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.leito-acesso {
+  display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 12px;
+  border: 1.5px solid var(--borda); background: var(--fundo);
+}
+.leito-acesso.liberado { background: var(--branco); border-color: var(--baixa-fundo); }
+.leito-acesso.inativo { opacity: 0.6; }
+.leito-acesso-numero { font-weight: 800; }
+.leito-acesso-status { font-size: 0.74rem; color: var(--texto-suave); }
+.leito-acesso.liberado .leito-acesso-status { color: var(--baixa); font-weight: 700; }
+.leito-acesso .botao { min-height: 32px; padding: 6px 10px; font-size: 0.74rem; color: var(--perigo); }
+
 /* ==========================================================================
    Responsivo — mobile-first: a base do projeto já é pensada para celular;
    os breakpoints abaixo afinam progressivamente para telas maiores E para
@@ -773,6 +789,7 @@ img, svg { max-width: 100%; }
   .cartao-config { padding: 16px; }
   .cabecalho-cartao-config { flex-direction: column; align-items: stretch; }
   .grade-leitos-config { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .acoes-acesso-qrcode { justify-content: space-between; }
 
   .portal-caixa .portal-titulo { font-size: 1.1rem; }
   .portal-legenda { font-size: 0.92rem; margin-bottom: 24px; }

@@ -20,7 +20,7 @@
       <div class="cabecalho-cartao-config">
         <div>
           <h2>Acesso do Paciente (QR Code)</h2>
-          <p>A tela onde o paciente abre um chamado só pode ser acessada por meio deste QR Code — o link não funciona sozinho para quem não escaneou.</p>
+          <p>A tela onde o paciente abre um chamado só pode ser acessada escaneando o QR Code do leito, e o acesso vale até a meia-noite (horário de Fortaleza).</p>
         </div>
       </div>
 
@@ -32,8 +32,7 @@
             <input type="text" id="linkAcessoPaciente" value="{{ url_acesso_paciente }}" readonly>
             <button type="button" class="botao botao-fantasma pequeno" id="botaoCopiarLink">Copiar</button>
           </div>
-          <p class="texto-suave">Imprima o QR Code e afixe no leito/quarto. Qualquer pessoa que só tenha o link (sem escanear o QR Code) também precisa desse mesmo link — revogar o acesso invalida os dois ao mesmo tempo.</p>
-          <button type="button" class="botao botao-fantasma botao-revogar-acesso" id="botaoRevogarAcesso">Revogar acesso de todos os links atuais</button>
+          <p class="texto-suave">O QR Code é fixo — imprima uma vez e afixe no leito/quarto. Cada escaneamento libera o acesso só até a meia-noite; para derrubar um acesso antes disso, use "Acesso pelo QR Code" na Central.</p>
         </div>
       </div>
     </section>
@@ -98,19 +97,6 @@
   </div>
 </div>
 
-<div class="fundo-modal" id="fundoModalRevogar">
-  <div class="modal-chamado-admin" id="modalRevogar" role="dialog" aria-modal="true" aria-label="Confirmar revogação de acesso">
-    <div class="modal-topo-admin">
-      <h2>Revogar acesso de todos os links atuais?</h2>
-      <button class="fechar-modal" id="botaoFecharModalRevogar" aria-label="Fechar">✕</button>
-    </div>
-    <p>Um novo QR Code será gerado agora. Todo QR Code impresso e todo link já compartilhado deixam de funcionar imediatamente — será preciso imprimir e afixar o novo QR Code nos leitos.</p>
-    <div class="linha-acoes-modal">
-      <button type="button" class="botao botao-fantasma" id="botaoCancelarRevogar">Cancelar</button>
-      <button type="button" class="botao perigo botao-confirmar-revogar" id="botaoConfirmarRevogar">Sim, revogar agora</button>
-    </div>
-  </div>
-</div>
 {% endblock %}
 
 {% block scripts %}

@@ -340,6 +340,10 @@
         renderConfirmacao(dados);
       }
     } catch (err) {
+      if (err.dados && err.dados.acesso_expirado && window.HRGAcessoPaciente) {
+        window.HRGAcessoPaciente.mostrarExpirado();
+        return;
+      }
       HRG.toast(err.message, "erro");
       enviandoChamado = false;
       if (botao) {

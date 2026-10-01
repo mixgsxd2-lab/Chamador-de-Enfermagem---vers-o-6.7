@@ -27,6 +27,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/enfermagem/acesso_paciente.js') }}"></script>
 <script>
   window.CHAMADO_ID = {{ chamado_id }};
 </script>
