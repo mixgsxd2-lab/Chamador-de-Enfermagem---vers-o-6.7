@@ -1,9 +1,10 @@
 /* ==========================================================================
-   Central de Enfermagem → "Acesso pelo QR Code".
+   Configurações → "Acesso pelo QR Code".
 
    Lista os leitos por andar, mostra quais foram liberados hoje (alguém
    escaneou o QR Code e o acesso ainda vale) e permite expirar o acesso de
-   um leito ou de todos — sempre com confirmação. A regra em si vive no
+   um leito ou de todos — sempre com confirmação — e um cronômetro de
+   quanto falta para o reset da meia-noite. A regra em si vive no
    backend (enfermagem/acesso.py); o celular do paciente percebe a
    revogação sozinho em poucos segundos (static/js/enfermagem/acesso_paciente.js).
    ========================================================================== */
@@ -12,8 +13,7 @@
 
   const escapeHtml = HRG.escapeHtml;
 
-  const botaoPainel = document.getElementById("botaoAcessoQrcode");
-  const painel = document.getElementById("painelAcessoQrcode");
+  const cronometro = document.getElementById("cronometroReset");
   const lista = document.getElementById("listaAcessoLeitos");
   const busca = document.getElementById("buscaLeitoAcesso");
   const totalLiberados = document.getElementById("totalLiberados");
@@ -24,7 +24,10 @@
   const botaoConfirmar = document.getElementById("botaoConfirmarExpirar");
 
   let andares = [];
-  let polling = null;
+  // Instante (relógio deste navegador) em que ocorre o reset — recalculado
+  // a cada carga a partir de `segundos_ate_reset`, que vem do servidor
+  // (horário de Fortaleza), então um relógio errado no PC não atrapalha.
+  let resetEm = null;
   let acaoPendente = null; // { andar, leito } ou { todos: true }
 
   function render() {
@@ -71,23 +74,31 @@
     try {
       const { dados } = await HRG.fetchJSON("/api/enfermagem/acesso/leitos");
       andares = dados.andares;
+      resetEm = Date.now() + dados.segundos_ate_reset * 1000;
+      atualizarCronometro();
       render();
     } catch (e) {
       if (!andares.length) lista.innerHTML = `<p class="texto-carregando">Não foi possível carregar os leitos.</p>`;
     }
   }
 
-  botaoPainel.addEventListener("click", () => {
-    const abrir = painel.hidden;
-    painel.hidden = !abrir;
-    botaoPainel.setAttribute("aria-expanded", String(abrir));
-    if (abrir) {
-      polling = HRG.pollWhileVisible(carregar, 15000);
-    } else if (polling) {
-      polling.parar();
-      polling = null;
+  function atualizarCronometro() {
+    if (resetEm == null) return;
+    const restante = Math.max(0, Math.round((resetEm - Date.now()) / 1000));
+    const h = String(Math.floor(restante / 3600)).padStart(2, "0");
+    const m = String(Math.floor((restante % 3600) / 60)).padStart(2, "0");
+    const s = String(restante % 60).padStart(2, "0");
+    cronometro.textContent = `${h}:${m}:${s}`;
+    if (restante === 0) {
+      // Meia-noite: busca de novo (zera os "liberados hoje" e o cronômetro
+      // volta para 24:00:00).
+      resetEm = null;
+      setTimeout(carregar, 1500);
     }
-  });
+  }
+
+  setInterval(atualizarCronometro, 1000);
+  HRG.pollWhileVisible(carregar, 15000);
 
   busca.addEventListener("input", render);
 

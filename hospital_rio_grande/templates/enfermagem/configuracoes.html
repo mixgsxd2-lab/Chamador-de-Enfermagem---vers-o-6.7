@@ -32,10 +32,35 @@
             <input type="text" id="linkAcessoPaciente" value="{{ url_acesso_paciente }}" readonly>
             <button type="button" class="botao botao-fantasma pequeno" id="botaoCopiarLink">Copiar</button>
           </div>
-          <p class="texto-suave">O QR Code é fixo — imprima uma vez e afixe no leito/quarto. Cada escaneamento libera o acesso só até a meia-noite; para derrubar um acesso antes disso, use "Acesso pelo QR Code" na Central.</p>
+          <p class="texto-suave">O QR Code é fixo — imprima uma vez e afixe no leito/quarto. Cada escaneamento libera o acesso só até a meia-noite; para derrubar um acesso antes disso, use "Acesso pelo QR Code" abaixo.</p>
         </div>
       </div>
     </section>
+
+    <section class="cartao-config painel-acesso-qrcode">
+      <div class="cabecalho-cartao-config">
+        <div>
+          <h2>Acesso pelo QR Code</h2>
+          <p>Quem escaneia o QR Code do leito entra sem senha até a meia-noite (horário de Fortaleza). "Expirar" derruba o acesso na hora; quem escanear de novo entra até a mesma meia-noite.</p>
+        </div>
+        <div class="acoes-acesso-qrcode">
+          <span class="cronometro-reset" title="Todos os acessos expiram à meia-noite (horário de Fortaleza)">
+            Reseta em <b id="cronometroReset">--:--:--</b>
+          </span>
+          <span class="resumo-leitos-item"><b id="totalLiberados">0</b> liberados hoje</span>
+          <button type="button" class="botao perigo pequeno" id="botaoExpirarTodos">Expirar todos</button>
+        </div>
+      </div>
+
+      <div class="campo campo-busca-leito">
+        <input type="text" id="buscaLeitoAcesso" placeholder="Buscar andar ou leito..." aria-label="Buscar andar ou leito">
+      </div>
+
+      <div id="listaAcessoLeitos" class="lista-andares-config">
+        <p class="texto-carregando">Carregando leitos...</p>
+      </div>
+    </section>
+
 
     <section class="cartao-config cartao-qrcode-leito">
       <div class="cabecalho-cartao-config">
@@ -97,8 +122,22 @@
   </div>
 </div>
 
+<div class="fundo-modal" id="fundoModalExpirar">
+  <div class="modal-chamado-admin" role="dialog" aria-modal="true" aria-labelledby="tituloModalExpirar">
+    <div class="modal-topo-admin">
+      <h2 id="tituloModalExpirar">Tem certeza?</h2>
+      <button class="fechar-modal" id="botaoFecharModalExpirar" aria-label="Fechar">✕</button>
+    </div>
+    <p id="textoModalExpirar"></p>
+    <div class="linha-acoes-modal">
+      <button type="button" class="botao botao-fantasma" id="botaoCancelarExpirar">Cancelar</button>
+      <button type="button" class="botao perigo" id="botaoConfirmarExpirar">Sim, expirar</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/enfermagem/configuracoes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/enfermagem/acesso_leitos.js') }}"></script>
 {% endblock %}

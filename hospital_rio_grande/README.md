@@ -585,9 +585,9 @@ e filtros com dados reais, e ausência de qualquer stack trace exposta.
   todo mundo, não 24 h a partir do escaneamento. Depois disso, a tela do
   paciente e as de acompanhamento mostram "Acesso expirado — escaneie o QR
   Code do seu leito"; escaneando de novo, entra até a meia-noite seguinte.
-- Central de Enfermagem → **Acesso pelo QR Code**: "Expirar acesso" por leito
+- Configurações → **Acesso pelo QR Code** (com cronômetro de quanto falta para o reset da meia-noite): "Expirar acesso" por leito
   e "Expirar todos", ambos com confirmação ("Tem certeza?"), liberados para
-  qualquer usuário logado (uso de teste). A tela aberta no celular troca para
+  qualquer usuário logado na área administrativa (uso de teste). A tela aberta no celular troca para
   "Acesso expirado" em até ~10 s (`static/js/enfermagem/acesso_paciente.js`).
   Quem escanear depois da revogação entra, mas só até a mesma meia-noite.
 - Regra em `enfermagem/acesso.py`; tabela `enfermagem_acesso_leitos` guarda

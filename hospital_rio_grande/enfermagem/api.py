@@ -22,7 +22,9 @@ from timeutils import (
     serie_periodo, inicio_janela_24h,
 )
 
-from enfermagem.acesso import acesso_atual, expirar_leito, expirar_todos, obter_token, status_leitos
+from enfermagem.acesso import (
+    acesso_atual, expirar_leito, expirar_todos, obter_token, proxima_meia_noite, status_leitos,
+)
 from enfermagem.auth import acesso_paciente_requerido, login_requerido
 from enfermagem.constants import (
     ANDARES, CATEGORIAS, CATEGORIA_OUTROS,
@@ -690,8 +692,8 @@ def acesso_paciente_status():
 @api_bp.route("/acesso/leitos", methods=["GET"])
 @login_requerido
 def acesso_leitos():
-    """Leitos por andar + quais estão com acesso liberado hoje (painel
-    "Acesso pelo QR Code" da Central)."""
+    """Leitos por andar + quais estão com acesso liberado hoje + segundos
+    até o reset da meia-noite (cartão "Acesso pelo QR Code" de Configurações)."""
     liberados = status_leitos()
     andares = [
         {
@@ -704,7 +706,8 @@ def acesso_leitos():
         }
         for grupo in listar_leitos()
     ]
-    return jsonify({"andares": andares})
+    restantes = max(0, int((proxima_meia_noite() - agora()).total_seconds()))
+    return jsonify({"andares": andares, "segundos_ate_reset": restantes})
 
 
 @api_bp.route("/acesso/expirar", methods=["POST"])
