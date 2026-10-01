@@ -729,9 +729,13 @@ img, svg { max-width: 100%; }
 .leito-config:disabled, .leito-config[disabled] { opacity: 0.6; pointer-events: none; }
 
 /* Central de Enfermagem → Acesso pelo QR Code (expirar acesso por leito) */
-.painel-acesso-qrcode { margin-bottom: 16px; }
 .grade-leitos-acesso { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .acoes-acesso-qrcode { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cronometro-reset {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--primaria-clara); color: var(--primaria-escura);
+  font-weight: 700; font-size: 0.82rem; padding: 8px 14px; border-radius: 20px; white-space: nowrap;
+}
+.cronometro-reset b { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
 .leito-acesso {
   display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 12px;
   border: 1.5px solid var(--borda); background: var(--fundo);

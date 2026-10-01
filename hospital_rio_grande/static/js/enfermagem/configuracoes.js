@@ -103,7 +103,7 @@
 
   // ---------------------------------------------------------------------
   // Acesso do Paciente (QR Code) — copiar link (o QR Code é fixo; expirar
-  // acessos fica na Central — ver static/js/enfermagem/central_acesso.js)
+  // acessos fica no cartão "Acesso pelo QR Code" — ver acesso_leitos.js)
   // ---------------------------------------------------------------------
   const linkAcessoPaciente = document.getElementById("linkAcessoPaciente");
   const botaoCopiarLink = document.getElementById("botaoCopiarLink");
